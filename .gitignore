@@ -218,3 +218,32 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ResumeForge AI App specific
+backend/.env
+backend/.env.*
+!backend/.env.example
+.env
+.env.*
+!.env.example
+uploads/
+outputs/
+temp/
+backend/uploads/
+backend/outputs/
+backend/temp/
+backend/storage/
+*.pdf
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
