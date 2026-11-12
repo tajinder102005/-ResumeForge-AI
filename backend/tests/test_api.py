@@ -73,3 +73,19 @@ def test_full_endpoint_pipeline():
     ))
     assert comp["success"] is True
     assert "pdf_url" in comp
+
+    # 6. Test optimization with custom instructions (user alteration & re-generation)
+    re_payload = CandidateSkillConfirmationPayload(
+        resume_id=resume.resume_id,
+        company_name="FinTech Global",
+        job_title="Senior Backend Engineer",
+        raw_job_description=SAMPLE_JD,
+        verified_skills=verified,
+        project_notes={"ResumeForge AI": "Added Redis pub/sub queue"},
+        optimization_mode="aggressive",
+        custom_instructions="Emphasize distributed systems architecture and high throughput concurrency."
+    )
+    re_optimized = optimize_resume(re_payload)
+    assert re_optimized.company_name == "FinTech Global"
+    assert re_optimized.pdf_generated is True
+    assert len(re_optimized.latex_code) > 100
