@@ -338,3 +338,4 @@ export const SkillsVerificationStep: React.FC<SkillsVerificationStepProps> = ({
     </div>
   );
 };
+

@@ -14,6 +14,11 @@ import {
   Lightbulb,
   ExternalLink,
   RotateCcw,
+  Wand2,
+  RefreshCw,
+  Sliders,
+  CheckSquare,
+  Briefcase,
 } from 'lucide-react';
 import { OptimizedResume } from '../types';
 import { getPdfDownloadUrl, getTexDownloadUrl } from '../services/api';
@@ -21,11 +26,29 @@ import { getPdfDownloadUrl, getTexDownloadUrl } from '../services/api';
 interface ResumePreviewStepProps {
   optimized: OptimizedResume;
   onReset: () => void;
+  onRegenerateWithInstructions: (instructions: string) => Promise<void>;
+  onNavigateToStep: (step: 'job' | 'verification' | 'projects') => void;
+  isRegenerating: boolean;
 }
 
-export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({ optimized, onReset }) => {
+const QUICK_SUGGESTIONS = [
+  '⚡ Emphasize C++ & Multithreading performance',
+  '🎯 Make project bullet points more metric-driven with % and scale',
+  '📝 Shorten Professional Summary to 2 impactful sentences',
+  '💼 Highlight microservices architecture and API design',
+  '🔧 Emphasize hands-on Docker and Kubernetes containerization',
+];
+
+export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
+  optimized,
+  onReset,
+  onRegenerateWithInstructions,
+  onNavigateToStep,
+  isRegenerating,
+}) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'latex' | 'enhancements'>('overview');
   const [copied, setCopied] = useState(false);
+  const [customInstructions, setCustomInstructions] = useState('');
 
   const ats = optimized.ats_report;
 
@@ -33,6 +56,11 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({ optimized,
     navigator.clipboard.writeText(optimized.latex_code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleApplyRefinement = () => {
+    if (!customInstructions.trim()) return;
+    onRegenerateWithInstructions(customInstructions.trim());
   };
 
   const getScoreColor = (score: number) => {
@@ -87,6 +115,99 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({ optimized,
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>New Role</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Interactive AI Refinement & Custom Alterations Card */}
+      <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-brand-950/20 to-slate-900 border border-brand-500/30 shadow-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-300">
+              <Wand2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white flex items-center space-x-2">
+                <span>Refine, Alter, or Add Changes</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-brand-500/20 text-brand-300">
+                  Interactive AI Iteration
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Want to alter bullet points, emphasize specific technologies, or tweak the tone? Instruct the AI to regenerate your resume.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick jump to edit steps */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onNavigateToStep('verification')}
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700 flex items-center space-x-1 transition-colors"
+            >
+              <CheckSquare className="w-3.5 h-3.5 text-brand-400" />
+              <span>Edit Skills</span>
+            </button>
+            <button
+              onClick={() => onNavigateToStep('projects')}
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700 flex items-center space-x-1 transition-colors"
+            >
+              <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Edit Projects</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Suggestion Pills */}
+        <div className="mb-3">
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+            Quick Refinement Prompts:
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_SUGGESTIONS.map((sug, sIdx) => (
+              <button
+                key={sIdx}
+                type="button"
+                onClick={() => setCustomInstructions(sug.replace(/^[^\w]+/, ''))}
+                className="text-xs px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-all text-left"
+              >
+                {sug}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Instructions Input & Action */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Type your changes here... (e.g., 'Emphasize my C++ experience in JobFlow', 'Add bullet on reducing query latency', 'Make summary more concise')"
+            value={customInstructions}
+            onChange={(e) => setCustomInstructions(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && customInstructions.trim()) {
+                handleApplyRefinement();
+              }
+            }}
+            className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+          />
+
+          <button
+            onClick={handleApplyRefinement}
+            disabled={isRegenerating || !customInstructions.trim()}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center space-x-2"
+          >
+            {isRegenerating ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Applying Changes & Re-compiling...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Regenerate Resume with Changes</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -229,30 +350,32 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({ optimized,
             </div>
 
             {/* Tailored Experience */}
-            <div className="border-b border-slate-800 pb-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">
-                Tailored Professional Experience
-              </h3>
-              <div className="space-y-5">
-                {optimized.experience.map((exp, idx) => (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-bold text-white text-sm">
-                        {exp.title} — <span className="text-slate-300 font-medium">{exp.company}</span>
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {exp.start_date} - {exp.end_date || 'Present'}
-                      </span>
+            {optimized.experience && optimized.experience.length > 0 && (
+              <div className="border-b border-slate-800 pb-5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">
+                  Tailored Professional Experience
+                </h3>
+                <div className="space-y-5">
+                  {optimized.experience.map((exp, idx) => (
+                    <div key={idx} className="space-y-1.5">
+                      <div className="flex justify-between items-baseline">
+                        <span className="font-bold text-white text-sm">
+                          {exp.title} — <span className="text-slate-300 font-medium">{exp.company}</span>
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {exp.start_date} - {exp.end_date || 'Present'}
+                        </span>
+                      </div>
+                      <ul className="list-disc pl-5 space-y-1 text-xs text-slate-300">
+                        {exp.bullet_points.map((b, bIdx) => (
+                          <li key={bIdx}>{b}</li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="list-disc pl-5 space-y-1 text-xs text-slate-300">
-                      {exp.bullet_points.map((b, bIdx) => (
-                        <li key={bIdx}>{b}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tailored Technical Projects */}
             <div>

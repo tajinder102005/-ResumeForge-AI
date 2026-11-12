@@ -30,6 +30,7 @@ class CandidateSkillConfirmationPayload(BaseModel):
     custom_skills: List[CandidateSkillVerificationItem] = Field(default_factory=list)
     project_notes: Dict[str, str] = Field(default_factory=dict)
     optimization_mode: Literal["aggressive", "enhancement_only"] = "aggressive"
+    custom_instructions: Optional[str] = ""
 
 
 class ProjectEnhancementRecommendation(BaseModel):

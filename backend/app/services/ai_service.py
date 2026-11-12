@@ -112,6 +112,7 @@ class AIService:
                 if s.status in ["supported", "confirmed"]
             ],
             "project_notes": payload.project_notes,
+            "custom_instructions": payload.custom_instructions or "",
             "optimization_mode": payload.optimization_mode,
         }
 
@@ -283,6 +284,9 @@ class AIService:
             f"high-performance, fault-tolerant architectures while ensuring clean code standards, comprehensive automated testing, "
             f"and seamless cross-functional delivery tailored for {target_company}."
         )
+        if payload.custom_instructions:
+            ci = payload.custom_instructions.strip()
+            summary += f" Explicitly tailored with focus on {ci[0].lower() + ci[1:] if len(ci) > 1 else ci}."
 
         # 3. Intelligent Project Tailoring
         tailored_projects: List[ProjectItem] = []

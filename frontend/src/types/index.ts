@@ -143,3 +143,4 @@ export interface SystemStatus {
   tectonic_available: boolean;
   tectonic_path?: string | null;
 }
+

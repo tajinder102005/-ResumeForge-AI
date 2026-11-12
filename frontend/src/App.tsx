@@ -88,6 +88,29 @@ export const App: React.FC = () => {
     setCurrentStep('job');
   };
 
+  const handleRegenerateWithInstructions = async (instructions: string) => {
+    if (!extractedResume || !jdAnalysis) return;
+    setIsGenerating(true);
+
+    try {
+      const result = await optimizeResume({
+        resume_id: extractedResume.resume_id,
+        company_name: companyName,
+        job_title: jobTitle,
+        raw_job_description: jobDescription,
+        verified_skills: skillsVerification,
+        project_notes: projectNotes,
+        optimization_mode: optimizationMode,
+        custom_instructions: instructions,
+      });
+      setOptimizedResume(result);
+    } catch (err: any) {
+      alert(`Regeneration failed: ${err.message || 'Please check backend logs'}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Header status={systemStatus} />
@@ -162,6 +185,9 @@ export const App: React.FC = () => {
           <ResumePreviewStep
             optimized={optimizedResume}
             onReset={handleReset}
+            onRegenerateWithInstructions={handleRegenerateWithInstructions}
+            onNavigateToStep={setCurrentStep}
+            isRegenerating={isGenerating}
           />
         )}
       </main>
@@ -175,3 +201,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+

@@ -59,6 +59,7 @@ export async function optimizeResume(params: {
   custom_skills?: CandidateSkillVerificationItem[];
   project_notes?: Record<string, string>;
   optimization_mode?: 'aggressive' | 'enhancement_only';
+  custom_instructions?: string;
 }): Promise<OptimizedResume> {
   const res = await fetch(`${API_BASE}/api/optimize`, {
     method: 'POST',
@@ -97,3 +98,4 @@ export function getPdfDownloadUrl(resume_id: string): string {
 export function getTexDownloadUrl(resume_id: string): string {
   return `${API_BASE}/api/download/tex/${resume_id}`;
 }
+

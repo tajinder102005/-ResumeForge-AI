@@ -208,3 +208,4 @@ export const ResumeUploadStep: React.FC<ResumeUploadStepProps> = ({
     </div>
   );
 };
+

@@ -68,3 +68,4 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
     </nav>
   );
 };
+
