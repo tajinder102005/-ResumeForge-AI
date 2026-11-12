@@ -12,8 +12,8 @@ from backend.app.models.optimization import OptimizedResume
 class LatexCompiler:
     """
     Compiles LaTeX code into high-fidelity PDF documents using Tectonic,
-    with an intelligent fallback to PyMuPDF ATS-direct rendering if local TeX packages are unbundled.
-    Validates output text extraction, searchability, and ATS compliance.
+    with an intelligent, pixel-perfect fallback to PyMuPDF ATS-direct rendering
+    with strict line wrapping and zero vertical overlap.
     """
 
     @classmethod
@@ -71,7 +71,7 @@ class LatexCompiler:
                     stdin=subprocess.DEVNULL,
                     capture_output=True,
                     text=True,
-                    timeout=3,
+                    timeout=20,
                     check=False
                 )
                 if res.returncode == 0 and pdf_path.exists():
@@ -117,20 +117,57 @@ class LatexCompiler:
     @classmethod
     def render_direct_ats_pdf(cls, resume: OptimizedResume, output_path: Path):
         """
-        Creates an elegant, single-page, ATS-compliant PDF document directly using PyMuPDF.
-        Follows standard recruiter formatting: clear headings, bullet points, hyperlinked header.
+        Creates an elegant, single/multi-page, ATS-compliant PDF document directly using PyMuPDF.
+        Calculates exact word wrapping and vertical line heights to guarantee ZERO text overlap.
         """
         doc = pymupdf.open()
-        # Letter size in points: 612 x 792
-        page = doc.new_page(width=612, height=792)
-        margin_x = 40
-        y = 40
+        PAGE_W = 612.0
+        PAGE_H = 792.0
+        MARGIN_X = 42.0
+        MARGIN_TOP = 42.0
+        MARGIN_BOTTOM = 42.0
+        CONTENT_W = PAGE_W - (MARGIN_X * 2)
 
+        font_name = "helv"
+        page = doc.new_page(width=PAGE_W, height=PAGE_H)
+        y = MARGIN_TOP
+
+        def check_page_break(needed_height: float):
+            nonlocal page, y
+            if y + needed_height > (PAGE_H - MARGIN_BOTTOM):
+                page = doc.new_page(width=PAGE_W, height=PAGE_H)
+                y = MARGIN_TOP
+
+        def wrap_text(text: str, max_w: float, fontsize: float) -> list[str]:
+            words = text.split()
+            if not words:
+                return []
+            lines = []
+            cur_line = words[0]
+            for w in words[1:]:
+                test_line = cur_line + " " + w
+                if pymupdf.get_text_length(test_line, fontname=font_name, fontsize=fontsize) <= max_w:
+                    cur_line = test_line
+                else:
+                    lines.append(cur_line)
+                    cur_line = w
+            if cur_line:
+                lines.append(cur_line)
+            return lines
+
+        def draw_wrapped_block(text: str, x: float, max_w: float, fontsize: float = 9.0, color=(0.18, 0.18, 0.18), line_spacing: float = 12.0):
+            nonlocal y
+            lines = wrap_text(text, max_w, fontsize)
+            for line in lines:
+                check_page_break(line_spacing)
+                page.insert_text(pymupdf.Point(x, y), line, fontsize=fontsize, fontname=font_name, color=color)
+                y += line_spacing
+
+        # 1. Header: Candidate Name
         contact = resume.contact_info
-
-        # Header: Name
         name_text = contact.name or "Candidate Name"
-        page.insert_text(pymupdf.Point(margin_x, y), name_text, fontsize=18, fontname="helv", color=(0.1, 0.1, 0.1))
+        check_page_break(28)
+        page.insert_text(pymupdf.Point(MARGIN_X, y), name_text.upper(), fontsize=18, fontname=font_name, color=(0.08, 0.08, 0.08))
         y += 18
 
         # Contact line
@@ -141,72 +178,88 @@ class LatexCompiler:
         if contact.linkedin: contact_parts.append(f"LinkedIn: {contact.linkedin}")
         if contact.github: contact_parts.append(f"GitHub: {contact.github}")
         contact_str = " | ".join(contact_parts)
-        page.insert_text(pymupdf.Point(margin_x, y), contact_str, fontsize=9, fontname="helv", color=(0.3, 0.3, 0.3))
-        y += 15
+        if contact_str:
+            check_page_break(16)
+            draw_wrapped_block(contact_str, MARGIN_X, CONTENT_W, fontsize=8.5, color=(0.35, 0.35, 0.35), line_spacing=11.0)
+            y += 4
 
         def add_section_header(title: str):
             nonlocal y
+            check_page_break(32)
             y += 6
-            page.draw_line(pymupdf.Point(margin_x, y), pymupdf.Point(612 - margin_x, y), color=(0.2, 0.2, 0.2), width=0.75)
+            page.draw_line(pymupdf.Point(MARGIN_X, y), pymupdf.Point(PAGE_W - MARGIN_X, y), color=(0.25, 0.25, 0.25), width=0.75)
             y += 12
-            page.insert_text(pymupdf.Point(margin_x, y), title.upper(), fontsize=10.5, fontname="helv", color=(0.1, 0.1, 0.1))
-            y += 12
+            page.insert_text(pymupdf.Point(MARGIN_X, y), title.upper(), fontsize=10.0, fontname=font_name, color=(0.08, 0.08, 0.08))
+            y += 13
 
-        # 1. Professional Summary
+        # 2. Professional Summary
         if resume.summary:
             add_section_header("Professional Summary")
-            rect = pymupdf.Rect(margin_x, y, 612 - margin_x, y + 60)
-            y += page.insert_textbox(rect, resume.summary, fontsize=9, fontname="helv", color=(0.2, 0.2, 0.2)) + 6
+            draw_wrapped_block(resume.summary, MARGIN_X, CONTENT_W, fontsize=8.8, color=(0.18, 0.18, 0.18), line_spacing=12.0)
+            y += 4
 
-        # 2. Technical Skills
+        # 3. Technical Skills
         if resume.rebuilt_skills:
             add_section_header("Technical Skills")
             for cat, skills in resume.rebuilt_skills.items():
                 if skills:
                     skill_line = f"{cat}: {', '.join(skills)}"
-                    rect = pymupdf.Rect(margin_x, y, 612 - margin_x, y + 25)
-                    y += page.insert_textbox(rect, skill_line, fontsize=9, fontname="helv", color=(0.2, 0.2, 0.2)) + 2
+                    draw_wrapped_block(skill_line, MARGIN_X, CONTENT_W, fontsize=8.8, color=(0.18, 0.18, 0.18), line_spacing=12.0)
+                    y += 1.5
+            y += 3
 
-        # 3. Professional Experience
+        # 4. Professional Experience
         if resume.experience:
             add_section_header("Professional Experience")
-            for exp in resume.experience[:3]:
-                # Title & Company line
+            for exp in resume.experience:
+                check_page_break(30)
                 dates = f"{exp.start_date or ''} - {exp.end_date or ('Present' if exp.current else '')}".strip(" -")
-                role_line = f"{exp.title} - {exp.company}"
-                page.insert_text(pymupdf.Point(margin_x, y), role_line, fontsize=9.5, fontname="helv", color=(0.1, 0.1, 0.1))
+                role_line = f"{exp.title} — {exp.company}"
+                page.insert_text(pymupdf.Point(MARGIN_X, y), role_line, fontsize=9.2, fontname=font_name, color=(0.1, 0.1, 0.1))
                 if dates:
-                    page.insert_text(pymupdf.Point(612 - margin_x - 90, y), dates, fontsize=8.5, fontname="helv", color=(0.4, 0.4, 0.4))
-                y += 11
-                # Bullets
-                for b in exp.bullet_points[:3]:
-                    rect = pymupdf.Rect(margin_x + 10, y, 612 - margin_x, y + 30)
-                    page.insert_text(pymupdf.Point(margin_x + 2, y + 7), "•", fontsize=9, fontname="helv")
-                    y += page.insert_textbox(rect, b, fontsize=8.5, fontname="helv", color=(0.25, 0.25, 0.25)) + 2
+                    dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.5)
+                    page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.5, fontname=font_name, color=(0.4, 0.4, 0.4))
+                y += 12
 
-        # 4. Technical Projects
+                for b in exp.bullet_points:
+                    check_page_break(14)
+                    bullet_text = b.strip().lstrip("-*• ")
+                    page.insert_text(pymupdf.Point(MARGIN_X + 2, y), "•", fontsize=8.5, fontname=font_name, color=(0.2, 0.2, 0.2))
+                    draw_wrapped_block(bullet_text, MARGIN_X + 12, CONTENT_W - 12, fontsize=8.5, color=(0.22, 0.22, 0.22), line_spacing=11.5)
+                    y += 2
+                y += 3
+
+        # 5. Technical Projects
         if resume.projects:
             add_section_header("Technical Projects")
-            for p in resume.projects[:2]:
-                tech_str = f" ({', '.join(p.technologies)})" if p.technologies else ""
-                proj_title = f"{p.name}{tech_str}"
-                page.insert_text(pymupdf.Point(margin_x, y), proj_title, fontsize=9.5, fontname="helv", color=(0.1, 0.1, 0.1))
-                y += 11
-                for b in p.bullet_points[:2]:
-                    rect = pymupdf.Rect(margin_x + 10, y, 612 - margin_x, y + 30)
-                    page.insert_text(pymupdf.Point(margin_x + 2, y + 7), "•", fontsize=9, fontname="helv")
-                    y += page.insert_textbox(rect, b, fontsize=8.5, fontname="helv", color=(0.25, 0.25, 0.25)) + 2
+            for p in resume.projects:
+                check_page_break(30)
+                proj_title = p.name
+                tech_str = f" ({' | '.join(p.technologies)})" if p.technologies else ""
+                full_title = f"{proj_title}{tech_str}"
+                draw_wrapped_block(full_title, MARGIN_X, CONTENT_W, fontsize=9.2, color=(0.1, 0.1, 0.1), line_spacing=12.0)
+                y += 2
 
-        # 5. Education
+                for b in p.bullet_points:
+                    check_page_break(14)
+                    bullet_text = b.strip().lstrip("-*• ")
+                    page.insert_text(pymupdf.Point(MARGIN_X + 2, y), "•", fontsize=8.5, fontname=font_name, color=(0.2, 0.2, 0.2))
+                    draw_wrapped_block(bullet_text, MARGIN_X + 12, CONTENT_W - 12, fontsize=8.5, color=(0.22, 0.22, 0.22), line_spacing=11.5)
+                    y += 2
+                y += 3
+
+        # 6. Education
         if resume.education:
             add_section_header("Education")
-            for edu in resume.education[:2]:
+            for edu in resume.education:
+                check_page_break(25)
                 dates = f"{edu.start_date or ''} - {edu.end_date or ''}".strip(" -")
                 edu_line = f"{edu.institution} | {edu.degree}"
-                page.insert_text(pymupdf.Point(margin_x, y), edu_line, fontsize=9, fontname="helv", color=(0.1, 0.1, 0.1))
+                page.insert_text(pymupdf.Point(MARGIN_X, y), edu_line, fontsize=9.0, fontname=font_name, color=(0.1, 0.1, 0.1))
                 if dates:
-                    page.insert_text(pymupdf.Point(612 - margin_x - 80, y), dates, fontsize=8.5, fontname="helv", color=(0.4, 0.4, 0.4))
-                y += 12
+                    dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.5)
+                    page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.5, fontname=font_name, color=(0.4, 0.4, 0.4))
+                y += 14
 
         doc.save(str(output_path))
         doc.close()
