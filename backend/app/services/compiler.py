@@ -175,8 +175,18 @@ class LatexCompiler:
         if contact.email: contact_parts.append(contact.email)
         if contact.phone: contact_parts.append(contact.phone)
         if contact.location: contact_parts.append(contact.location)
-        if contact.linkedin: contact_parts.append(f"LinkedIn: {contact.linkedin}")
-        if contact.github: contact_parts.append(f"GitHub: {contact.github}")
+        if contact.linkedin:
+            li_disp = contact.linkedin.replace("https://www.linkedin.com/in/", "").replace("https://linkedin.com/in/", "").rstrip("/")
+            contact_parts.append(f"LinkedIn: {li_disp}")
+        if contact.github:
+            gh_disp = contact.github.replace("https://github.com/", "").rstrip("/")
+            contact_parts.append(f"GitHub: {gh_disp}")
+        if contact.leetcode:
+            lc_disp = contact.leetcode.replace("https://leetcode.com/u/", "").replace("https://leetcode.com/", "").rstrip("/")
+            contact_parts.append(f"LeetCode: {lc_disp}")
+        if contact.website:
+            ws_disp = contact.website.replace("https://", "").replace("http://", "").rstrip("/")
+            contact_parts.append(f"Portfolio: {ws_disp}")
         contact_str = " | ".join(contact_parts)
         if contact_str:
             check_page_break(16)

@@ -9,6 +9,7 @@ class ContactInfo(BaseModel):
     location: str = ""
     linkedin: Optional[str] = None
     github: Optional[str] = None
+    leetcode: Optional[str] = None
     website: Optional[str] = None
 
 

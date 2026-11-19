@@ -24,6 +24,7 @@ class ResumeExtractor:
     PHONE_REGEX = re.compile(r"(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}")
     LINKEDIN_REGEX = re.compile(r"(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/([a-zA-Z0-9_-]+)", re.IGNORECASE)
     GITHUB_REGEX = re.compile(r"(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_-]+)", re.IGNORECASE)
+    LEETCODE_REGEX = re.compile(r"(?:https?:\/\/)?(?:www\.)?leetcode\.com\/(?:u\/)?([a-zA-Z0-9_-]+)", re.IGNORECASE)
 
     SECTION_HEADERS = {
         "summary": ["summary", "professional summary", "about me", "profile", "objective"],
@@ -112,6 +113,9 @@ class ResumeExtractor:
         github_match = cls.GITHUB_REGEX.search(text)
         github = github_match.group(0) if github_match else None
 
+        leetcode_match = cls.LEETCODE_REGEX.search(text)
+        leetcode = leetcode_match.group(0) if leetcode_match else None
+
         # Candidate name is typically on the very first or second line
         name = "Candidate"
         for line in lines[:5]:
@@ -120,7 +124,7 @@ class ResumeExtractor:
                 continue
             if phone and phone in line:
                 continue
-            if "linkedin" in line.lower() or "github" in line.lower() or "http" in line.lower():
+            if any(k in line.lower() for k in ["linkedin", "github", "leetcode", "http", "www."]):
                 continue
             if len(line.split()) in [2, 3, 4] and not any(char.isdigit() for char in line):
                 name = line.strip()
@@ -140,6 +144,7 @@ class ResumeExtractor:
             location="",
             linkedin=linkedin,
             github=github,
+            leetcode=leetcode,
             website=None,
         )
 

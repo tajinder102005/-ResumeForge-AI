@@ -177,6 +177,22 @@ def compile_latex(req: CompileRequest):
     }
 
 
+@app.get("/api/view/pdf/{resume_id}")
+async def view_pdf(resume_id: str):
+    """
+    Streams PDF directly for in-browser visual preview (inline display).
+    """
+    pdf_path = settings.STORAGE_DIR / "pdfs" / f"{resume_id}.pdf"
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="PDF not found. Please generate the resume first.")
+
+    return FileResponse(
+        path=str(pdf_path),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "inline"}
+    )
+
+
 @app.get("/api/download/pdf/{resume_id}")
 async def download_pdf(resume_id: str):
     """

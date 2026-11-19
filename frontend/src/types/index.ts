@@ -5,6 +5,7 @@ export interface ContactInfo {
   location: string;
   linkedin?: string | null;
   github?: string | null;
+  leetcode?: string | null;
   website?: string | null;
 }
 

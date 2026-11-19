@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_API_BASE: str = ""
-    OPENAI_MODEL: str = "llama-3.3-70b-versatile"
+    OPENAI_MODEL: str = "openai/gpt-oss-120b"
     ENVIRONMENT: str = "development"
     HOST: str = "127.0.0.1"
     PORT: int = 8000

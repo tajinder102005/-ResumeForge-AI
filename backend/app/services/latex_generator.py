@@ -137,6 +137,9 @@ class LatexGenerator:
         if contact.github:
             gh_clean = escape_latex(contact.github)
             links.append(f"\\href{{{gh_clean}}}{{GitHub}}")
+        if contact.leetcode:
+            lc_clean = escape_latex(contact.leetcode)
+            links.append(f"\\href{{{lc_clean}}}{{LeetCode}}")
         if contact.website:
             ws_clean = escape_latex(contact.website)
             links.append(f"\\href{{{ws_clean}}}{{Portfolio}}")

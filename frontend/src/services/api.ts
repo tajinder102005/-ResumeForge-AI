@@ -95,6 +95,10 @@ export function getPdfDownloadUrl(resume_id: string): string {
   return `${API_BASE}/api/download/pdf/${resume_id}`;
 }
 
+export function getPdfViewUrl(resume_id: string): string {
+  return `${API_BASE}/api/view/pdf/${resume_id}`;
+}
+
 export function getTexDownloadUrl(resume_id: string): string {
   return `${API_BASE}/api/download/tex/${resume_id}`;
 }

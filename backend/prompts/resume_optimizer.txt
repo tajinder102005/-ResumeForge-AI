@@ -65,3 +65,4 @@ Your primary mission is to transform an existing candidate resume into an aggres
 7. STRICT STRUCTURED JSON OUTPUT:
    - Your response must be strictly valid JSON conforming exactly to the requested schema.
    - No conversational preamble or trailing remarks outside the JSON block.
+
