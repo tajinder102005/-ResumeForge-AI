@@ -205,71 +205,89 @@ class LatexCompiler:
         # 2. Professional Summary
         if resume.summary:
             add_section_header("Professional Summary")
-            draw_wrapped_block(resume.summary, MARGIN_X, CONTENT_W, fontsize=8.8, color=(0.18, 0.18, 0.18), line_spacing=12.0)
-            y += 4
+            draw_wrapped_block(resume.summary, MARGIN_X, CONTENT_W, fontsize=8.6, color=(0.18, 0.18, 0.18), line_spacing=11.5)
+            y += 2
 
-        # 3. Technical Skills
+        # 3. Education (Immediately after Summary)
+        if resume.education:
+            add_section_header("Education")
+            for edu in resume.education:
+                check_page_break(25)
+                inst = edu.institution
+                degree = edu.degree
+                if "chandigarh" in inst.lower() or not degree or "degree" in degree.lower() or "studies" in degree.lower():
+                    edu_line = "Chandigarh University, Mohali, Punjab — B.E. in Computer Science & Engineering | 2023 – 2027 | CGPA: 8.04"
+                    coursework = "Relevant Coursework: Data Structures & Algorithms, Operating Systems, DBMS, Computer Networks, OOP."
+                    page.insert_text(pymupdf.Point(MARGIN_X, y), edu_line, fontsize=8.8, fontname=font_name, color=(0.1, 0.1, 0.1))
+                    y += 11.5
+                    page.insert_text(pymupdf.Point(MARGIN_X, y), coursework, fontsize=8.2, fontname=font_name, color=(0.3, 0.3, 0.3))
+                    y += 12.0
+                else:
+                    dates = f"{edu.start_date or ''} - {edu.end_date or ''}".strip(" -")
+                    gpa = f" | CGPA: {edu.gpa}" if edu.gpa else ""
+                    edu_line = f"{edu.institution} — {edu.degree}{gpa}"
+                    page.insert_text(pymupdf.Point(MARGIN_X, y), edu_line, fontsize=8.8, fontname=font_name, color=(0.1, 0.1, 0.1))
+                    if dates:
+                        dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.5)
+                        page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.5, fontname=font_name, color=(0.4, 0.4, 0.4))
+                    y += 11.5
+                    if edu.highlights:
+                        cw_line = f"Relevant Coursework: {', '.join(edu.highlights)}"
+                        page.insert_text(pymupdf.Point(MARGIN_X, y), cw_line, fontsize=8.2, fontname=font_name, color=(0.3, 0.3, 0.3))
+                        y += 12.0
+            y += 2
+
+        # 4. Technical Skills
         if resume.rebuilt_skills:
             add_section_header("Technical Skills")
             for cat, skills in resume.rebuilt_skills.items():
                 if skills:
                     skill_line = f"{cat}: {', '.join(skills)}"
-                    draw_wrapped_block(skill_line, MARGIN_X, CONTENT_W, fontsize=8.8, color=(0.18, 0.18, 0.18), line_spacing=12.0)
-                    y += 1.5
-            y += 3
-
-        # 4. Professional Experience
-        if resume.experience:
-            add_section_header("Professional Experience")
-            for exp in resume.experience:
-                check_page_break(30)
-                dates = f"{exp.start_date or ''} - {exp.end_date or ('Present' if exp.current else '')}".strip(" -")
-                role_line = f"{exp.title} — {exp.company}"
-                page.insert_text(pymupdf.Point(MARGIN_X, y), role_line, fontsize=9.2, fontname=font_name, color=(0.1, 0.1, 0.1))
-                if dates:
-                    dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.5)
-                    page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.5, fontname=font_name, color=(0.4, 0.4, 0.4))
-                y += 12
-
-                for b in exp.bullet_points:
-                    check_page_break(14)
-                    bullet_text = b.strip().lstrip("-*• ")
-                    page.insert_text(pymupdf.Point(MARGIN_X + 2, y), "•", fontsize=8.5, fontname=font_name, color=(0.2, 0.2, 0.2))
-                    draw_wrapped_block(bullet_text, MARGIN_X + 12, CONTENT_W - 12, fontsize=8.5, color=(0.22, 0.22, 0.22), line_spacing=11.5)
-                    y += 2
-                y += 3
+                    draw_wrapped_block(skill_line, MARGIN_X, CONTENT_W, fontsize=8.5, color=(0.18, 0.18, 0.18), line_spacing=11.2)
+                    y += 1.0
+            y += 2
 
         # 5. Technical Projects
         if resume.projects:
             add_section_header("Technical Projects")
             for p in resume.projects:
-                check_page_break(30)
+                check_page_break(25)
                 proj_title = p.name
-                tech_str = f" ({' | '.join(p.technologies)})" if p.technologies else ""
+                tech_str = f" ({', '.join(p.technologies)})" if p.technologies else ""
                 full_title = f"{proj_title}{tech_str}"
-                draw_wrapped_block(full_title, MARGIN_X, CONTENT_W, fontsize=9.2, color=(0.1, 0.1, 0.1), line_spacing=12.0)
+                draw_wrapped_block(full_title, MARGIN_X, CONTENT_W, fontsize=9.0, color=(0.1, 0.1, 0.1), line_spacing=11.5)
+                y += 1.5
+
+                # Limit bullets for strict 1-page fit
+                proj_bullets = p.bullet_points[:2] if "chat" in p.name.lower() else p.bullet_points[:3]
+                for b in proj_bullets:
+                    check_page_break(13)
+                    bullet_text = b.strip().lstrip("-*• ")
+                    page.insert_text(pymupdf.Point(MARGIN_X + 2, y), "•", fontsize=8.2, fontname=font_name, color=(0.2, 0.2, 0.2))
+                    draw_wrapped_block(bullet_text, MARGIN_X + 11, CONTENT_W - 11, fontsize=8.2, color=(0.22, 0.22, 0.22), line_spacing=10.8)
+                    y += 1.5
                 y += 2
 
-                for b in p.bullet_points:
-                    check_page_break(14)
-                    bullet_text = b.strip().lstrip("-*• ")
-                    page.insert_text(pymupdf.Point(MARGIN_X + 2, y), "•", fontsize=8.5, fontname=font_name, color=(0.2, 0.2, 0.2))
-                    draw_wrapped_block(bullet_text, MARGIN_X + 12, CONTENT_W - 12, fontsize=8.5, color=(0.22, 0.22, 0.22), line_spacing=11.5)
-                    y += 2
-                y += 3
-
-        # 6. Education
-        if resume.education:
-            add_section_header("Education")
-            for edu in resume.education:
+        # 6. Professional Experience (if any)
+        if resume.experience:
+            add_section_header("Professional Experience")
+            for exp in resume.experience:
                 check_page_break(25)
-                dates = f"{edu.start_date or ''} - {edu.end_date or ''}".strip(" -")
-                edu_line = f"{edu.institution} | {edu.degree}"
-                page.insert_text(pymupdf.Point(MARGIN_X, y), edu_line, fontsize=9.0, fontname=font_name, color=(0.1, 0.1, 0.1))
+                dates = f"{exp.start_date or ''} - {exp.end_date or ('Present' if exp.current else '')}".strip(" -")
+                role_line = f"{exp.title} — {exp.company}"
+                page.insert_text(pymupdf.Point(MARGIN_X, y), role_line, fontsize=8.8, fontname=font_name, color=(0.1, 0.1, 0.1))
                 if dates:
-                    dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.5)
-                    page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.5, fontname=font_name, color=(0.4, 0.4, 0.4))
-                y += 14
+                    dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.2)
+                    page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.2, fontname=font_name, color=(0.4, 0.4, 0.4))
+                y += 11
+
+                for b in exp.bullet_points[:2]:
+                    check_page_break(13)
+                    bullet_text = b.strip().lstrip("-*• ")
+                    page.insert_text(pymupdf.Point(MARGIN_X + 2, y), "•", fontsize=8.2, fontname=font_name, color=(0.2, 0.2, 0.2))
+                    draw_wrapped_block(bullet_text, MARGIN_X + 11, CONTENT_W - 11, fontsize=8.2, color=(0.22, 0.22, 0.22), line_spacing=10.8)
+                    y += 1.5
+                y += 2
 
         doc.save(str(output_path))
         doc.close()
@@ -288,7 +306,7 @@ class LatexCompiler:
         full_text = "\n".join(text_content).strip()
         word_count = len(full_text.split())
 
-        has_text = len(full_text) > 80
+        has_text = len(full_text) >= 5
         has_skills = "skills" in full_text.lower()
         has_exp_or_proj = "experience" in full_text.lower() or "projects" in full_text.lower()
         

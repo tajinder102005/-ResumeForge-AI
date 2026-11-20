@@ -162,13 +162,18 @@ def optimize_resume(payload: CandidateSkillConfirmationPayload):
 @app.post("/api/compile")
 def compile_latex(req: CompileRequest):
     """
-    Compiles LaTeX code into PDF and performs PyMuPDF text validation.
+    Compiles LaTeX code into PDF and performs text validation.
+    Updates the in-memory resume store so user edits persist.
     """
     optimized = OPTIMIZED_RESUME_STORE.get(req.resume_id)
     result = LatexCompiler.compile_latex(req.latex_code, req.resume_id, optimized)
     if not result["success"]:
         return JSONResponse(status_code=400, content=result)
     
+    if optimized:
+        optimized.latex_code = req.latex_code
+        optimized.pdf_generated = True
+
     return {
         "success": True,
         "pdf_url": f"/api/download/pdf/{req.resume_id}",
@@ -180,7 +185,7 @@ def compile_latex(req: CompileRequest):
 @app.get("/api/view/pdf/{resume_id}")
 async def view_pdf(resume_id: str):
     """
-    Streams PDF directly for in-browser visual preview (inline display).
+    Streams PDF directly for in-browser visual preview (inline display with no-cache headers).
     """
     pdf_path = settings.STORAGE_DIR / "pdfs" / f"{resume_id}.pdf"
     if not pdf_path.exists():
@@ -189,7 +194,12 @@ async def view_pdf(resume_id: str):
     return FileResponse(
         path=str(pdf_path),
         media_type="application/pdf",
-        headers={"Content-Disposition": "inline"}
+        headers={
+            "Content-Disposition": "inline",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
     )
 
 

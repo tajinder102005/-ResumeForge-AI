@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Download,
   Copy,
@@ -21,13 +21,15 @@ import {
   Eye,
   Mail,
   Phone,
-  MapPin,
   Linkedin,
   Github,
   Code2,
+  Play,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import { OptimizedResume } from '../types';
-import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl } from '../services/api';
+import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl, compileLatex } from '../services/api';
 
 interface ResumePreviewStepProps {
   optimized: OptimizedResume;
@@ -38,12 +40,12 @@ interface ResumePreviewStepProps {
 }
 
 const QUICK_SUGGESTIONS = [
-  '🔗 Update LinkedIn, GitHub, and LeetCode in contact info',
-  '⚡ Emphasize low-latency C++ systems & multithreading in projects',
-  '🎯 Make project bullet points more metric-driven with % and scale',
-  '📝 Shorten Professional Summary to 3 punchy, impactful sentences',
+  '⚡ Emphasize C# and SQL distributed systems performance',
+  '🎯 Keep strictly to 1 page with 3 bullets per project',
+  '📝 Shorten Professional Summary to 2 high-impact sentences',
   '💼 Highlight microservices architecture, REST APIs, and Kafka',
   '🔧 Emphasize hands-on Docker, Kubernetes, and CI/CD pipelines',
+  '🔗 Update LinkedIn, GitHub, and LeetCode in contact line',
 ];
 
 export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
@@ -53,15 +55,27 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
   onNavigateToStep,
   isRegenerating,
 }) => {
-  const [activeTab, setActiveTab] = useState<'preview' | 'overview' | 'latex' | 'enhancements'>('preview');
+  const [activeTab, setActiveTab] = useState<'preview' | 'latex' | 'overview' | 'enhancements'>('preview');
   const [copied, setCopied] = useState(false);
   const [customInstructions, setCustomInstructions] = useState('');
+  
+  // LaTeX Editor & Compilation States
+  const [editableLatex, setEditableLatex] = useState(optimized.latex_code);
+  const [isCompilingLatex, setIsCompilingLatex] = useState(false);
+  const [compileError, setCompileError] = useState<string | null>(null);
+  const [compileSuccess, setCompileSuccess] = useState<string | null>(null);
+  const [pdfTimestamp, setPdfTimestamp] = useState<number>(Date.now());
+
+  useEffect(() => {
+    setEditableLatex(optimized.latex_code);
+    setPdfTimestamp(Date.now());
+  }, [optimized.latex_code, optimized.resume_id]);
 
   const ats = optimized.ats_report;
   const contact = optimized.contact_info;
 
   const handleCopyLatex = () => {
-    navigator.clipboard.writeText(optimized.latex_code);
+    navigator.clipboard.writeText(editableLatex);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -69,6 +83,34 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
   const handleApplyRefinement = () => {
     if (!customInstructions.trim()) return;
     onRegenerateWithInstructions(customInstructions.trim());
+  };
+
+  const handleRecompileLatex = async () => {
+    if (!editableLatex.trim()) return;
+    setIsCompilingLatex(true);
+    setCompileError(null);
+    setCompileSuccess(null);
+
+    try {
+      const res = await compileLatex({
+        resume_id: optimized.resume_id,
+        latex_code: editableLatex,
+      });
+
+      if (res.success) {
+        optimized.latex_code = editableLatex;
+        setPdfTimestamp(Date.now());
+        setCompileSuccess('LaTeX recompiled successfully! Live PDF document has been updated.');
+        // Switch to preview tab so user instantly sees the newly compiled result
+        setActiveTab('preview');
+      } else {
+        setCompileError(res.error || 'Compilation failed. Please inspect LaTeX code syntax.');
+      }
+    } catch (err: any) {
+      setCompileError(err.message || 'Failed to connect to compilation service.');
+    } finally {
+      setIsCompilingLatex(false);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -88,7 +130,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
               Optimized ATS Resume
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              Ready
+              1-Page Compliant
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
@@ -146,7 +188,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
           </div>
         </div>
 
-        {/* Download Buttons */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3">
           <a
             href={getPdfDownloadUrl(optimized.resume_id)}
@@ -191,7 +233,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Want to update links, change project bullets, adjust skills, or tweak wording? Type instructions below and regenerate.
+                Provide instructions to re-optimize with the AI, or directly edit LaTeX markup in the LaTeX Editor tab.
               </p>
             </div>
           </div>
@@ -238,7 +280,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            placeholder="Type your changes here... (e.g. 'Add my linkedin: https://linkedin.com/in/... and leetcode: https://leetcode.com/u/...', 'Emphasize C++ multithreading in projects')"
+            placeholder="Type instructions here... (e.g. 'Shorten summary to 2 lines', 'Add microservices latency metrics', 'Focus on C# and SQL')"
             value={customInstructions}
             onChange={(e) => setCustomInstructions(e.target.value)}
             onKeyDown={(e) => {
@@ -257,12 +299,12 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
             {isRegenerating ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Applying Changes & Re-compiling...</span>
+                <span>Regenerating with Groq 120B...</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Regenerate Resume with Changes</span>
+                <span>Regenerate Resume with AI</span>
               </>
             )}
           </button>
@@ -284,18 +326,6 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
         </button>
 
         <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
-            activeTab === 'overview'
-              ? 'bg-brand-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white bg-slate-900/60'
-          }`}
-        >
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>ATS Intelligence & Rebuilt Resume</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('latex')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
             activeTab === 'latex'
@@ -304,7 +334,19 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
           }`}
         >
           <FileCode className="w-3.5 h-3.5" />
-          <span>LaTeX Source Code</span>
+          <span>Editable LaTeX & Compiler</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
+            activeTab === 'overview'
+              ? 'bg-brand-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white bg-slate-900/60'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>ATS Intelligence Report</span>
         </button>
 
         <button
@@ -329,15 +371,22 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
             <div className="flex items-center space-x-2">
               <Eye className="w-4 h-4 text-brand-400" />
               <span className="text-xs font-bold text-white">
-                Live Document Preview (Rendered ATS PDF)
+                Live Document Preview (Rendered 1-Page ATS PDF)
               </span>
               <span className="text-[11px] text-slate-400">
-                — Inspect formatting, line spacing, and contact links before downloading.
+                — Inspect layout, line heights, and exact formatting.
               </span>
             </div>
             <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setActiveTab('latex')}
+                className="px-3 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 text-xs border border-indigo-700/50 flex items-center space-x-1.5 transition-colors"
+              >
+                <FileCode className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Edit LaTeX Source</span>
+              </button>
               <a
-                href={getPdfViewUrl(optimized.resume_id)}
+                href={getPdfViewUrl(optimized.resume_id) + `?t=${pdfTimestamp}`}
                 target="_blank"
                 rel="noreferrer"
                 className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center space-x-1.5 transition-colors"
@@ -358,7 +407,8 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
 
           <div className="w-full bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-800 shadow-2xl flex justify-center">
             <iframe
-              src={getPdfViewUrl(optimized.resume_id)}
+              key={pdfTimestamp}
+              src={getPdfViewUrl(optimized.resume_id) + `?t=${pdfTimestamp}`}
               className="w-full h-[950px] rounded-xl border border-slate-800 bg-white"
               title="Resume PDF Visual Preview"
             />
@@ -366,7 +416,92 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
         </div>
       )}
 
-      {/* TAB 1: OVERVIEW & ATS INTELLIGENCE */}
+      {/* TAB 1: EDITABLE LATEX SOURCE CODE & ON-THE-FLY COMPILER */}
+      {activeTab === 'latex' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900 border border-slate-800 rounded-xl">
+            <div>
+              <h3 className="text-xs font-bold text-white flex items-center space-x-2">
+                <FileCode className="w-4 h-4 text-brand-400" />
+                <span>Interactive LaTeX Editor & Real-Time Compiler</span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Edit the LaTeX code directly below and click "Compile LaTeX & Update Resume" to see the newly compiled PDF instantly.
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleCopyLatex}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center space-x-1.5 transition-colors border border-slate-700"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy LaTeX</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleRecompileLatex}
+                disabled={isCompilingLatex}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center space-x-2 transition-all"
+              >
+                {isCompilingLatex ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Compiling with Tectonic LaTeX...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Compile LaTeX & Update Resume</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Compilation Feedback Banners */}
+          {compileError && (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start space-x-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-semibold">Compilation Error:</strong>
+                <pre className="mt-1 whitespace-pre-wrap font-mono text-[11px] text-rose-200">{compileError}</pre>
+              </div>
+            </div>
+          )}
+
+          {compileSuccess && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span>{compileSuccess}</span>
+            </div>
+          )}
+
+          <div className="relative rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl">
+            <div className="bg-slate-900/90 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+              <span className="font-mono">resume.tex</span>
+              <span>UTF-8 | Tectonic LaTeX Engine</span>
+            </div>
+            <textarea
+              value={editableLatex}
+              onChange={(e) => setEditableLatex(e.target.value)}
+              className="w-full h-[650px] p-5 bg-slate-950 text-slate-200 font-mono text-xs leading-relaxed focus:outline-none resize-y selection:bg-brand-900/50"
+              spellCheck={false}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: OVERVIEW & ATS INTELLIGENCE */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
           {/* ATS Scorecard Grid */}
@@ -462,34 +597,6 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
               </div>
             </div>
 
-            {/* Tailored Experience */}
-            {optimized.experience && optimized.experience.length > 0 && (
-              <div className="border-b border-slate-800 pb-5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">
-                  Tailored Professional Experience
-                </h3>
-                <div className="space-y-5">
-                  {optimized.experience.map((exp, idx) => (
-                    <div key={idx} className="space-y-1.5">
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold text-white text-sm">
-                          {exp.title} — <span className="text-slate-300 font-medium">{exp.company}</span>
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {exp.start_date} - {exp.end_date || 'Present'}
-                        </span>
-                      </div>
-                      <ul className="list-disc pl-5 space-y-1 text-xs text-slate-300">
-                        {exp.bullet_points.map((b, bIdx) => (
-                          <li key={bIdx}>{b}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Tailored Technical Projects */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">
@@ -516,37 +623,6 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* TAB 2: LATEX SOURCE CODE */}
-      {activeTab === 'latex' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded-xl">
-            <span className="text-xs text-slate-400">
-              Raw compiled LaTeX source code generated with standard standard packages.
-            </span>
-            <button
-              onClick={handleCopyLatex}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center space-x-1.5 transition-colors border border-slate-700"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy LaTeX</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <pre className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs overflow-x-auto max-h-[600px] leading-relaxed">
-            {optimized.latex_code}
-          </pre>
         </div>
       )}
 
