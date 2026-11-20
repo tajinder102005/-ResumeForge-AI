@@ -281,12 +281,14 @@ class AIService:
         prompt_message = (
             "You are an executive resume architect. Generate an aggressively optimized 1-page ATS resume strictly adhering to:\n"
             "1. LENGTH: Exactly ONE page. Zero overflow.\n"
-            "2. SECTION ORDER: Header -> Professional Summary -> Education -> Technical Skills -> Technical Projects.\n"
-            "3. SUMMARY: Exactly 2 punchy, metric-oriented technical sentences targeted at the role. Do NOT dump prompt instructions.\n"
-            "4. EDUCATION: Chandigarh University, Mohali, Punjab — B.E. in Computer Science & Engineering | 2023 - 2027 | CGPA: 8.04. Coursework: DSA, OS, DBMS, Computer Networks, OOP.\n"
-            "5. TECHNICAL SKILLS: Categorize into Programming Languages, Frameworks & Libraries, Databases & Storage, Cloud & DevOps, Backend & Distributed Systems. Prioritize JD skills.\n"
-            "6. PROJECTS: Exactly 3 bullets for JobFlow and FinTrack; exactly 2 bullets for Real-Time Chat App. Format: Strong action verb + what was built + tech + outcome. Max 1 line (~110 chars) per bullet. No fragmented text.\n"
-            "Output strictly valid JSON with keys: contact_info, summary, rebuilt_skills, projects, education, recommended_project_enhancements, ats_report.\n\n"
+            "2. SECTION ORDER: Header -> Professional Summary -> Education -> Technical Skills -> Technical Projects -> Achievements.\n"
+            "3. ZERO FABRICATION: Do NOT invent metrics, percentages (like 30% or 40%), fake user counts (like 5k+ concurrent users), or transaction numbers (like 10k+ daily transactions). Only use verifiable, truthful achievements from the candidate's actual resume.\n"
+            "4. SUMMARY: Exactly 2 technical sentences targeted at the role and company. Mention strong OOP, distributed systems, and 1000+ DSA problems solved.\n"
+            "5. EDUCATION: Chandigarh University, Mohali, Punjab — B.E. in Computer Science & Engineering | 2023 - 2027 | CGPA: 8.04. Coursework: Data Structures & Algorithms, OOP, Operating Systems, DBMS, Computer Networks.\n"
+            "6. TECHNICAL SKILLS: Categorize into Programming Languages, Frameworks & Libraries, Databases & Storage, Cloud & DevOps, Backend & Distributed Systems. CRITICAL: Each category must be a JSON array of strings (e.g. [\"Java\", \"Spring Boot\"]), NEVER a single comma-separated string. Prioritize skills matching the target role.\n"
+            "7. PROJECTS: Exactly 3 bullets for JobFlow and FinTrack; exactly 2 bullets for Real-Time Chat App. Provide each bullet as a string inside 'bullet_points' array. Format: Strong action verb + what was built + tech + truthful outcome. Never return empty bullet_points.\n"
+            "8. ACHIEVEMENTS: Include a JSON array of 3-4 strings (LeetCode 1000+ DSA problems, 500 Days Badge, NPTEL Cloud Computing Silver, hackathons).\n"
+            "Output strictly valid JSON with keys: contact_info, summary, rebuilt_skills, projects, education, achievements, recommended_project_enhancements, ats_report.\n\n"
             f"{json.dumps(user_content)}"
         )
 
@@ -322,14 +324,39 @@ class AIService:
                     raw_text = resp_json["choices"][0]["message"]["content"]
                     data = json.loads(raw_text)
 
+                    # Map original projects by first word for bullet fallback
+                    orig_proj_map = {}
+                    for op in resume.projects:
+                        key = op.name.lower().split()[0] if op.name else ""
+                        if key:
+                            orig_proj_map[key] = op
+
                     # Parse projects
                     optimized_projects = []
                     raw_projects = data.get("projects") or data.get("technical_projects", [])
                     for p in raw_projects:
                         if isinstance(p, dict):
-                            name = p.get("name", "Project")
-                            bullets = p.get("bullet_points", []) if isinstance(p.get("bullet_points"), list) else []
-                            techs = p.get("technologies", []) if isinstance(p.get("technologies"), list) else []
+                            name = p.get("name") or p.get("project_name", "Project")
+                            raw_b = (
+                                p.get("bullet_points")
+                                or p.get("bullets")
+                                or p.get("highlights")
+                                or p.get("points")
+                                or []
+                            )
+                            if isinstance(raw_b, str):
+                                bullets = [b.strip() for b in raw_b.split("\n") if b.strip()]
+                            elif isinstance(raw_b, list):
+                                bullets = [str(b).strip() for b in raw_b if str(b).strip()]
+                            else:
+                                bullets = []
+                            raw_t = p.get("technologies") or p.get("tech") or p.get("tools") or []
+                            if isinstance(raw_t, str):
+                                techs = [t.strip() for t in raw_t.split(",") if t.strip()]
+                            elif isinstance(raw_t, list):
+                                techs = [str(t).strip() for t in raw_t if str(t).strip()]
+                            else:
+                                techs = []
                             desc = p.get("description")
                             lnk = p.get("link")
                         else:
@@ -338,6 +365,40 @@ class AIService:
                             techs = []
                             desc = None
                             lnk = None
+
+                        # Fallback to candidate original bullets if LLM returned empty bullets
+                        first_word = name.lower().split()[0] if name else ""
+                        orig_p = orig_proj_map.get(first_word)
+                        if not bullets and orig_p and orig_p.bullet_points:
+                            bullets = list(orig_p.bullet_points)
+                        if not techs and orig_p and orig_p.technologies:
+                            techs = list(orig_p.technologies)
+
+                        # Guaranteed fallback bullets for core projects if still empty
+                        if not bullets:
+                            if "jobflow" in name.lower():
+                                bullets = [
+                                    "Architected a microservices platform for candidates, recruiters, and admins with auth, job, and application services.",
+                                    "Built secured REST APIs with Spring Boot, API Gateway, Eureka, OpenFeign, JWT, RBAC, and Resilience4j.",
+                                    "Implemented Kafka and RabbitMQ event-driven workflows for async notifications, with Zipkin distributed tracing."
+                                ]
+                                if not techs:
+                                    techs = ["Java", "Spring Boot", "PostgreSQL", "RabbitMQ"]
+                            elif "fintrack" in name.lower():
+                                bullets = [
+                                    "Built a full-stack MERN finance app for transaction tracking, budgeting, expense analytics, and reporting.",
+                                    "Implemented JWT auth, bcrypt hashing, and Google/GitHub OAuth 2.0 with protected Express.js routes.",
+                                    "Developed a RAG pipeline with embeddings and Pinecone vector search to give Gemini relevant financial context."
+                                ]
+                                if not techs:
+                                    techs = ["React", "Node.js", "MongoDB", "Redis", "Pinecone"]
+                            elif "chat" in name.lower():
+                                bullets = [
+                                    "Built a real-time messaging app with one-to-one and group chats using React, Node.js, and Socket.IO.",
+                                    "Implemented user discovery via email, phone, and QR code, with typing indicators and online/offline presence."
+                                ]
+                                if not techs:
+                                    techs = ["React", "Node.js", "Socket.IO", "Supabase"]
 
                         cap = 2 if "chat" in name.lower() else 3
                         optimized_projects.append(ProjectItem(
@@ -348,14 +409,39 @@ class AIService:
                             link=lnk
                         ))
 
-                    # Parse skills
+                    if not optimized_projects and resume.projects:
+                        optimized_projects = list(resume.projects)
+
+                    # Parse skills: support both list of strings and comma-separated string per category
                     raw_skills = data.get("rebuilt_skills") or data.get("technical_skills") or {}
                     if isinstance(raw_skills, dict) and raw_skills:
-                        rebuilt_skills = {
-                            cat: [s for s in skills if not any(re.search(pat, s.lower()) for pat in JUNK_SKILL_PATTERNS)]
-                            for cat, skills in raw_skills.items()
-                            if skills
-                        }
+                        rebuilt_skills = {}
+                        for cat, skills_val in raw_skills.items():
+                            if isinstance(skills_val, str):
+                                s_list = [s.strip() for s in skills_val.split(",") if s.strip()]
+                            elif isinstance(skills_val, list):
+                                s_list = []
+                                for item in skills_val:
+                                    if isinstance(item, str):
+                                        if "," in item:
+                                            s_list.extend([sub.strip() for sub in item.split(",") if sub.strip()])
+                                        else:
+                                            s_list.append(item.strip())
+                                    else:
+                                        s_list.append(str(item).strip())
+                            else:
+                                s_list = []
+
+                            # Deduplicate preserving order and strip junk
+                            seen = set()
+                            deduped = []
+                            for s in s_list:
+                                s_lower = s.lower()
+                                if s_lower not in seen and s_lower != "" and not any(re.search(pat, s_lower) for pat in JUNK_SKILL_PATTERNS):
+                                    seen.add(s_lower)
+                                    deduped.append(s)
+                            if deduped:
+                                rebuilt_skills[cat] = deduped
                     else:
                         rebuilt_skills = cls._clean_and_categorize_skills(
                             payload.verified_skills + payload.custom_skills,
@@ -375,12 +461,19 @@ class AIService:
                         projects=optimized_projects if optimized_projects else resume.projects
                     )
 
+                    # Summary: Sanitize any hallucinated metrics (5k+ users, 30%, 10k+ transactions)
                     summary_text = (data.get("summary") or data.get("professional_summary") or "").strip()
-                    if not summary_text or len(summary_text) > 350 or "explicitly tailored" in summary_text.lower():
+                    fake_metric_patterns = [r"\b\d+k\+\b", r"\breducing\s+response\s+latency\b", r"\b\d+%\b"]
+                    has_fake_metric = any(re.search(p, summary_text, re.IGNORECASE) for p in fake_metric_patterns)
+
+                    if not summary_text or len(summary_text) > 350 or "explicitly tailored" in summary_text.lower() or has_fake_metric:
+                        company_target_str = f" at {target_company}" if target_company and target_company != "Target Organization" else ""
+                        role_target_str = f"{target_role} role" if target_role and "intern" not in target_role.lower() else "Software Development Internship"
                         summary_text = (
-                            f"Results-oriented {target_role} with proven engineering experience designing, deploying, and scaling "
-                            f"robust technical solutions using {', '.join(jd_analysis.top_critical_skills[:3]) or 'modern backend architectures'}. "
-                            f"Adept at microservices, low-latency API design, and automated testing tailored for {target_company}."
+                            f"Computer Science undergraduate (B.E., 2027) with hands-on experience building full-stack applications, "
+                            f"RESTful APIs, and distributed microservices using Java, Spring Boot, React, and SQL/NoSQL databases. "
+                            f"Strong foundation in OOP, SOLID principles, and system scaling with 1000+ DSA problems solved. "
+                            f"Seeking a {role_target_str}{company_target_str}."
                         )
 
                     # Build education
@@ -394,6 +487,18 @@ class AIService:
                             highlights=["Data Structures & Algorithms", "Operating Systems", "DBMS", "Computer Networks", "OOP"]
                         )
                     ]
+
+                    # Parse achievements
+                    raw_ach = data.get("achievements") or []
+                    if isinstance(raw_ach, list) and raw_ach:
+                        achievements_list = [str(a).strip() for a in raw_ach if str(a).strip()]
+                    else:
+                        achievements_list = [
+                            "Solved 1000+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
+                            "Earned the 500 Days Coding Badge on LeetCode.",
+                            "Completed NPTEL Cloud Computing certification with Silver grade.",
+                            "Participated in multiple hackathons, applying software development and problem-solving skills to build solutions under time constraints."
+                        ]
 
                     enhancements = []
                     raw_enh = data.get("recommended_project_enhancements") or data.get("project_enhancements", [])
@@ -417,7 +522,7 @@ class AIService:
                         projects=optimized_projects if optimized_projects else resume.projects,
                         education=edu_list,
                         certifications=[],
-                        achievements=[],
+                        achievements=achievements_list,
                         recommended_project_enhancements=enhancements,
                         ats_report=ats_report,
                         latex_code="",

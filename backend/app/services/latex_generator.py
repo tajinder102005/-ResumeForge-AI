@@ -108,15 +108,19 @@ class LatexGenerator:
         # Skills Block
         skills_lines = []
         for cat, skills in resume.rebuilt_skills.items():
-            if skills:
-                # Remove duplicate items in the list preserving order
-                seen = set()
-                deduped = []
-                for s in skills:
-                    s_lower = s.strip().lower()
-                    if s_lower not in seen and s_lower != "":
-                        seen.add(s_lower)
-                        deduped.append(s.strip())
+            if not skills:
+                continue
+            if isinstance(skills, str):
+                skills = [s.strip() for s in skills.split(",") if s.strip()]
+            seen = set()
+            deduped = []
+            for s in skills:
+                s_str = str(s).strip()
+                s_lower = s_str.lower()
+                if s_lower not in seen and s_lower != "":
+                    seen.add(s_lower)
+                    deduped.append(s_str)
+            if deduped:
                 cat_esc = escape_latex(cat)
                 skills_str = escape_latex(", ".join(deduped))
                 skills_lines.append(f"\\textbf{{{cat_esc}:}} {skills_str}\\\\")
@@ -134,9 +138,14 @@ class LatexGenerator:
             bullets_latex = []
             for b in p.bullet_points:
                 b_clean = escape_latex(b.strip().lstrip("-*• "))
-                bullets_latex.append(f"  \\item {b_clean}")
-            bullets_str = "\n".join(bullets_latex)
+                if b_clean:
+                    bullets_latex.append(f"  \\item {b_clean}")
+            
+            # Prevent empty itemize block which causes LaTeX compile failure
+            if not bullets_latex:
+                continue
 
+            bullets_str = "\n".join(bullets_latex)
             proj_entry = (
                 f"{heading}\n"
                 f"\\begin{{itemize}}\n"

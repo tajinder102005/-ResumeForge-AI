@@ -242,9 +242,24 @@ class LatexCompiler:
             add_section_header("Technical Skills")
             for cat, skills in resume.rebuilt_skills.items():
                 if skills:
-                    skill_line = f"{cat}: {', '.join(skills)}"
-                    draw_wrapped_block(skill_line, MARGIN_X, CONTENT_W, fontsize=8.5, color=(0.18, 0.18, 0.18), line_spacing=11.2)
-                    y += 1.0
+                    if isinstance(skills, str):
+                        s_list = [s.strip() for s in skills.split(",") if s.strip()]
+                    elif isinstance(skills, list):
+                        s_list = [str(s).strip() for s in skills if str(s).strip()]
+                    else:
+                        s_list = []
+                    # Deduplicate preserving order
+                    seen = set()
+                    deduped = []
+                    for s in s_list:
+                        s_lower = s.lower()
+                        if s_lower not in seen and s_lower != "":
+                            seen.add(s_lower)
+                            deduped.append(s)
+                    if deduped:
+                        skill_line = f"{cat}: {', '.join(deduped)}"
+                        draw_wrapped_block(skill_line, MARGIN_X, CONTENT_W, fontsize=8.5, color=(0.18, 0.18, 0.18), line_spacing=11.2)
+                        y += 1.0
             y += 2
 
         # 5. Technical Projects
@@ -268,7 +283,27 @@ class LatexCompiler:
                     y += 1.5
                 y += 2
 
-        # 6. Professional Experience (if any)
+        # 6. Achievements Section
+        achievements_list = resume.achievements
+        if not achievements_list:
+            achievements_list = [
+                "Solved 1000+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
+                "Earned the 500 Days Coding Badge on LeetCode.",
+                "Completed NPTEL Cloud Computing certification with Silver grade.",
+                "Participated in multiple hackathons, applying software development and problem-solving skills to build solutions under time constraints."
+            ]
+
+        if achievements_list:
+            add_section_header("Achievements")
+            for ach in achievements_list:
+                check_page_break(13)
+                ach_text = ach.strip().lstrip("-*• ")
+                page.insert_text(pymupdf.Point(MARGIN_X + 2, y), "•", fontsize=8.2, fontname=font_name, color=(0.2, 0.2, 0.2))
+                draw_wrapped_block(ach_text, MARGIN_X + 11, CONTENT_W - 11, fontsize=8.2, color=(0.22, 0.22, 0.22), line_spacing=10.8)
+                y += 1.5
+            y += 2
+
+        # 7. Professional Experience (if any)
         if resume.experience:
             add_section_header("Professional Experience")
             for exp in resume.experience:
