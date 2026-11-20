@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -18,7 +18,10 @@ from backend.app.services.extractor import ResumeExtractor
 from backend.app.services.jd_analyzer import JobDescriptionAnalyzer
 from backend.app.services.resume_analyzer import ResumeAnalyzer
 from backend.app.services.ai_service import AIService
+from backend.app.services.latex_generator import LatexGenerator
 from backend.app.services.compiler import LatexCompiler
+from backend.app.services.docx_generator import DocxGenerator
+from backend.app.services.database import DatabaseService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("resumeforge")
@@ -29,16 +32,19 @@ app = FastAPI(
     version="2.0.0",
 )
 
+# Initialize persistent SQLite database
+DatabaseService.init_db()
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all for development flexibility
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# In-memory session stores (per resume_id)
+# In-memory session caches (backed by DatabaseService)
 RESUME_STORE: Dict[str, ExtractedResume] = {}
 JD_ANALYSIS_STORE: Dict[str, JobDescriptionAnalysis] = {}
 OPTIMIZED_RESUME_STORE: Dict[str, OptimizedResume] = {}
@@ -54,6 +60,11 @@ class JobAnalysisRequest(BaseModel):
 class CompileRequest(BaseModel):
     resume_id: str
     latex_code: str
+
+
+class TemplateSwitchRequest(BaseModel):
+    resume_id: str
+    template_name: str  # "modern" | "classic" | "tech"
 
 
 @app.get("/health")
@@ -72,6 +83,9 @@ def system_status():
         "openai_model": settings.OPENAI_MODEL if has_openai else "N/A",
         "tectonic_available": tectonic_bin is not None,
         "tectonic_path": tectonic_bin,
+        "database_storage": "SQLite Persistent (backend/storage/db/resumeforge.db)",
+        "available_templates": ["modern", "classic", "tech"],
+        "export_formats": ["pdf", "tex", "docx"],
     }
 
 
@@ -79,6 +93,7 @@ def system_status():
 async def upload_resume(file: UploadFile = File(...)):
     """
     Accepts PDF or DOCX resume, extracts contact info, sections, skills, experience, and projects.
+    Persists to SQLite database and in-memory cache.
     """
     filename = file.filename or "uploaded_resume.pdf"
     content = await file.read()
@@ -88,7 +103,8 @@ async def upload_resume(file: UploadFile = File(...)):
     try:
         extracted = ResumeExtractor.extract_from_bytes(content, filename)
         RESUME_STORE[extracted.resume_id] = extracted
-        logger.info(f"Successfully parsed resume: {extracted.resume_id} ({filename})")
+        DatabaseService.save_extracted_resume(extracted, filename)
+        logger.info(f"Successfully parsed & persisted resume: {extracted.resume_id} ({filename})")
         return extracted
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -103,7 +119,7 @@ def analyze_job_description(payload: JobAnalysisRequest):
     Performs deep keyword extraction across 17 technical categories,
     then compares against the uploaded resume to identify Supported vs Missing skills.
     """
-    resume = RESUME_STORE.get(payload.resume_id)
+    resume = RESUME_STORE.get(payload.resume_id) or DatabaseService.get_extracted_resume(payload.resume_id)
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found. Please upload your resume first.")
 
@@ -117,6 +133,7 @@ def analyze_job_description(payload: JobAnalysisRequest):
         job_title=payload.job_title or ""
     )
     JD_ANALYSIS_STORE[payload.resume_id] = jd_analysis
+    DatabaseService.save_jd_analysis(payload.resume_id, jd_analysis)
 
     # Skills comparison
     verification_items = ResumeAnalyzer.compare_skills_against_resume(
@@ -137,11 +154,11 @@ def optimize_resume(payload: CandidateSkillConfirmationPayload):
     Executes Aggressive Resume Optimization incorporating candidate-confirmed skills,
     deep project tailoring, and project enhancement recommendations.
     """
-    resume = RESUME_STORE.get(payload.resume_id)
+    resume = RESUME_STORE.get(payload.resume_id) or DatabaseService.get_extracted_resume(payload.resume_id)
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found. Please upload your resume first.")
 
-    jd_analysis = JD_ANALYSIS_STORE.get(payload.resume_id)
+    jd_analysis = JD_ANALYSIS_STORE.get(payload.resume_id) or DatabaseService.get_jd_analysis(payload.resume_id)
     if not jd_analysis:
         jd_analysis = JobDescriptionAnalyzer.analyze_job_description(
             job_description=payload.raw_job_description,
@@ -149,6 +166,7 @@ def optimize_resume(payload: CandidateSkillConfirmationPayload):
             job_title=payload.job_title or ""
         )
         JD_ANALYSIS_STORE[payload.resume_id] = jd_analysis
+        DatabaseService.save_jd_analysis(payload.resume_id, jd_analysis)
 
     optimized = AIService.optimize_resume(
         resume=resume,
@@ -156,16 +174,46 @@ def optimize_resume(payload: CandidateSkillConfirmationPayload):
         payload=payload
     )
     OPTIMIZED_RESUME_STORE[payload.resume_id] = optimized
+    DatabaseService.save_optimized_resume(optimized, template_name="modern")
     return optimized
+
+
+@app.post("/api/template/switch")
+def switch_template(req: TemplateSwitchRequest):
+    """
+    Regenerates LaTeX source with chosen theme (modern | classic | tech)
+    and recompiles PDF with Tectonic without re-running LLM optimization.
+    """
+    optimized = OPTIMIZED_RESUME_STORE.get(req.resume_id) or DatabaseService.get_optimized_resume(req.resume_id)
+    if not optimized:
+        raise HTTPException(status_code=404, detail="Optimized resume not found. Please generate resume first.")
+
+    tex_code = LatexGenerator.generate(optimized, template_name=req.template_name)
+    optimized.latex_code = tex_code
+
+    comp_result = LatexCompiler.compile_latex(tex_code, req.resume_id, optimized)
+    if comp_result["success"]:
+        optimized.pdf_generated = True
+
+    OPTIMIZED_RESUME_STORE[req.resume_id] = optimized
+    DatabaseService.save_optimized_resume(optimized, template_name=req.template_name)
+
+    return {
+        "success": comp_result["success"],
+        "template_name": req.template_name,
+        "latex_code": tex_code,
+        "pdf_url": f"/api/download/pdf/{req.resume_id}",
+        "error": comp_result.get("error")
+    }
 
 
 @app.post("/api/compile")
 def compile_latex(req: CompileRequest):
     """
     Compiles LaTeX code into PDF and performs text validation.
-    Updates the in-memory resume store so user edits persist.
+    Updates in-memory cache and persistent database.
     """
-    optimized = OPTIMIZED_RESUME_STORE.get(req.resume_id)
+    optimized = OPTIMIZED_RESUME_STORE.get(req.resume_id) or DatabaseService.get_optimized_resume(req.resume_id)
     result = LatexCompiler.compile_latex(req.latex_code, req.resume_id, optimized)
     if not result["success"]:
         return JSONResponse(status_code=400, content=result)
@@ -173,6 +221,7 @@ def compile_latex(req: CompileRequest):
     if optimized:
         optimized.latex_code = req.latex_code
         optimized.pdf_generated = True
+        DatabaseService.save_optimized_resume(optimized)
 
     return {
         "success": True,
@@ -234,10 +283,60 @@ async def download_tex(resume_id: str):
         media_type="text/x-tex"
     )
 
+
+@app.get("/api/download/docx/{resume_id}")
+async def download_docx(resume_id: str):
+    """
+    Generates and downloads an ATS-compliant Microsoft Word (.docx) resume.
+    """
+    optimized = OPTIMIZED_RESUME_STORE.get(resume_id) or DatabaseService.get_optimized_resume(resume_id)
+    if not optimized:
+        raise HTTPException(status_code=404, detail="Optimized resume not found. Please generate resume first.")
+
+    docx_path = DocxGenerator.generate(optimized)
+    return FileResponse(
+        path=str(docx_path),
+        filename=f"ResumeForge_{resume_id[:8]}.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+
+@app.get("/api/history")
+def get_optimization_history(limit: int = 20):
+    """
+    Returns list of recently optimized resumes stored in the persistent database.
+    """
+    return DatabaseService.list_history(limit=limit)
+
+
+@app.get("/api/history/{resume_id}")
+def load_history_entry(resume_id: str):
+    """
+    Loads past optimized resume session from database.
+    """
+    optimized = DatabaseService.get_optimized_resume(resume_id)
+    if not optimized:
+        raise HTTPException(status_code=404, detail="Resume session not found.")
+    OPTIMIZED_RESUME_STORE[resume_id] = optimized
+    return optimized
+
+
+@app.delete("/api/history/{resume_id}")
+def delete_history_entry(resume_id: str):
+    """
+    Deletes past resume optimization entry from persistent database.
+    """
+    success = DatabaseService.delete_history_entry(resume_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Entry could not be deleted.")
+    if resume_id in RESUME_STORE: del RESUME_STORE[resume_id]
+    if resume_id in JD_ANALYSIS_STORE: del JD_ANALYSIS_STORE[resume_id]
+    if resume_id in OPTIMIZED_RESUME_STORE: del OPTIMIZED_RESUME_STORE[resume_id]
+    return {"success": True, "message": f"Resume {resume_id} deleted."}
+
+
 # Mount Frontend static files for single-command full-stack execution
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 if frontend_dist.exists():
     from fastapi.staticfiles import StaticFiles
     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
-
-

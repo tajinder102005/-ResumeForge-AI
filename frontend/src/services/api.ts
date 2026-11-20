@@ -103,3 +103,42 @@ export function getTexDownloadUrl(resume_id: string): string {
   return `${API_BASE}/api/download/tex/${resume_id}`;
 }
 
+export function getDocxDownloadUrl(resume_id: string): string {
+  return `${API_BASE}/api/download/docx/${resume_id}`;
+}
+
+export async function switchTemplate(params: {
+  resume_id: string;
+  template_name: string;
+}): Promise<{
+  success: boolean;
+  template_name: string;
+  latex_code: string;
+  pdf_url: string;
+  error?: string;
+}> {
+  const res = await fetch(`${API_BASE}/api/template/switch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to switch template.');
+  }
+  return res.json();
+}
+
+export async function fetchHistory(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/api/history`);
+  if (!res.ok) throw new Error('Failed to fetch history');
+  return res.json();
+}
+
+export async function deleteHistory(resume_id: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/history/${resume_id}`, {
+    method: 'DELETE',
+  });
+  return res.json();
+}
+

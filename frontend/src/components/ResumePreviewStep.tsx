@@ -27,9 +27,11 @@ import {
   Play,
   AlertTriangle,
   CheckCircle2,
+  FileText,
+  Palette,
 } from 'lucide-react';
 import { OptimizedResume } from '../types';
-import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl, compileLatex } from '../services/api';
+import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl, getDocxDownloadUrl, compileLatex, switchTemplate } from '../services/api';
 
 interface ResumePreviewStepProps {
   optimized: OptimizedResume;
@@ -78,6 +80,36 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
     navigator.clipboard.writeText(editableLatex);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const [selectedTemplate, setSelectedTemplate] = useState<'modern' | 'classic' | 'tech'>('modern');
+  const [isSwitchingTemplate, setIsSwitchingTemplate] = useState(false);
+
+  const handleTemplateSwitch = async (tpl: 'modern' | 'classic' | 'tech') => {
+    if (tpl === selectedTemplate || isSwitchingTemplate) return;
+    setIsSwitchingTemplate(true);
+    setCompileError(null);
+    setCompileSuccess(null);
+    try {
+      const res = await switchTemplate({
+        resume_id: optimized.resume_id,
+        template_name: tpl,
+      });
+      if (res.success) {
+        setSelectedTemplate(tpl);
+        setEditableLatex(res.latex_code);
+        optimized.latex_code = res.latex_code;
+        setPdfTimestamp(Date.now());
+        setCompileSuccess(`Switched to ${tpl.toUpperCase()} layout and compiled successfully!`);
+        setActiveTab('preview');
+      } else {
+        setCompileError(res.error || 'Failed to switch template.');
+      }
+    } catch (err: any) {
+      setCompileError(err.message || 'Error switching template.');
+    } finally {
+      setIsSwitchingTemplate(false);
+    }
   };
 
   const handleApplyRefinement = () => {
@@ -200,6 +232,15 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
           </a>
 
           <a
+            href={getDocxDownloadUrl(optimized.resume_id)}
+            download
+            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-2"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Download .DOCX</span>
+          </a>
+
+          <a
             href={getTexDownloadUrl(optimized.resume_id)}
             download
             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-all flex items-center space-x-2"
@@ -307,6 +348,52 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                 <span>Regenerate Resume with AI</span>
               </>
             )}
+          </button>
+        </div>
+      </div>
+
+      {/* Template Theme Switcher Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg">
+        <div className="flex items-center space-x-2">
+          <Palette className="w-4 h-4 text-brand-400" />
+          <span className="text-xs font-bold text-slate-200">Typography & Layout Theme:</span>
+          <span className="text-[11px] text-slate-400 hidden md:inline">Instant Tectonic re-compilation</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => handleTemplateSwitch('modern')}
+            disabled={isSwitchingTemplate}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+              selectedTemplate === 'modern'
+                ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20 ring-1 ring-brand-400/30'
+                : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60'
+            }`}
+          >
+            <span>Modern Minimalist</span>
+          </button>
+
+          <button
+            onClick={() => handleTemplateSwitch('classic')}
+            disabled={isSwitchingTemplate}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+              selectedTemplate === 'classic'
+                ? 'bg-amber-600 text-white shadow-md shadow-amber-500/20 ring-1 ring-amber-400/30'
+                : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60'
+            }`}
+          >
+            <span>Classic Ivy League</span>
+          </button>
+
+          <button
+            onClick={() => handleTemplateSwitch('tech')}
+            disabled={isSwitchingTemplate}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+              selectedTemplate === 'tech'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-1 ring-blue-400/30'
+                : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60'
+            }`}
+          >
+            <span>Tech Modern Accent</span>
           </button>
         </div>
       </div>

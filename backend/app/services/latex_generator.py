@@ -2,12 +2,11 @@ from typing import Dict, List, Optional
 from backend.app.models.optimization import OptimizedResume
 from backend.app.utils.text_cleaning import escape_latex
 
-
-LATEX_TEMPLATE = r"""\documentclass[letterpaper,10pt]{article}
+TEMPLATE_MODERN = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage[left=0.6in,right=0.6in,top=0.5in,bottom=0.5in]{geometry}
+\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
@@ -18,22 +17,123 @@ LATEX_TEMPLATE = r"""\documentclass[letterpaper,10pt]{article}
 \raggedright
 \raggedbottom
 \urlstyle{same}
-\linespread{1.08}
+\linespread{1.04}
 
-% Standard heading: bold caps, rule sits below the text with normal spacing
+% Modern minimalist heading: bold caps, clean rule
 \titleformat{\section}{\large\bfseries\uppercase}{}{0em}{}[\titlerule]
-\titlespacing*{\section}{0pt}{10pt}{5pt}
+\titlespacing*{\section}{0pt}{8pt}{3pt}
 
-\setlist[itemize]{leftmargin=0.2in, itemsep=2pt, parsep=0pt, topsep=3pt}
+\setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
 
 \begin{document}
 
 \begin{center}
-  {\LARGE\bfseries __CANDIDATE_NAME__}\\[4pt]
+  {\LARGE\bfseries __CANDIDATE_NAME__}\\[3pt]
   __CONTACT_LINE__
 \end{center}
 
-\vspace{-10pt}
+\vspace{-8pt}
+
+\section{Professional Summary}
+__SUMMARY__
+
+\section{Education}
+__EDUCATION_SECTION__
+
+\section{Technical Skills}
+__SKILLS_BLOCK__
+
+\section{Technical Projects}
+__PROJECTS_SECTION__
+
+__ACHIEVEMENTS_SECTION__
+
+\end{document}
+"""
+
+TEMPLATE_CLASSIC = r"""\documentclass[letterpaper,10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[left=0.52in,right=0.52in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\raggedright
+\raggedbottom
+\urlstyle{same}
+\linespread{1.04}
+
+% Classic Ivy League heading: small-caps, traditional rule
+\titleformat{\section}{\large\scshape\bfseries}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{8pt}{3pt}
+
+\setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\scshape\bfseries __CANDIDATE_NAME__}\\[3pt]
+  __CONTACT_LINE__
+\end{center}
+
+\vspace{-8pt}
+
+\section{Professional Summary}
+__SUMMARY__
+
+\section{Education}
+__EDUCATION_SECTION__
+
+\section{Technical Skills}
+__SKILLS_BLOCK__
+
+\section{Technical Projects}
+__PROJECTS_SECTION__
+
+__ACHIEVEMENTS_SECTION__
+
+\end{document}
+"""
+
+TEMPLATE_TECH = r"""\documentclass[letterpaper,10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand\familydefault{\sfdefault}
+\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+
+\definecolor{techblue}{RGB}{15, 60, 120}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\raggedright
+\raggedbottom
+\urlstyle{same}
+\linespread{1.04}
+
+% Modern Tech Accent heading: navy colored rule & uppercase
+\titleformat{\section}{\color{techblue}\large\bfseries}{}{0em}{\uppercase}[\color{techblue}\titlerule]
+\titlespacing*{\section}{0pt}{8pt}{3pt}
+
+\setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{techblue} __CANDIDATE_NAME__}\\[3pt]
+  __CONTACT_LINE__
+\end{center}
+
+\vspace{-8pt}
 
 \section{Professional Summary}
 __SUMMARY__
@@ -54,14 +154,24 @@ __ACHIEVEMENTS_SECTION__
 
 
 class LatexGenerator:
-    """Generates standard, ATS-friendly LaTeX code matching exact user specifications and zero-fabrication rules."""
+    """Generates standard, ATS-friendly LaTeX code supporting multiple elegant themes."""
+
+    TEMPLATES = {
+        "modern": TEMPLATE_MODERN,
+        "classic": TEMPLATE_CLASSIC,
+        "tech": TEMPLATE_TECH,
+    }
 
     @classmethod
-    def generate(cls, resume: OptimizedResume) -> str:
+    def generate(cls, resume: OptimizedResume, template_name: str = "modern") -> str:
+        tpl_key = template_name.lower().strip() if template_name else "modern"
+        base_template = cls.TEMPLATES.get(tpl_key, TEMPLATE_MODERN)
+
         contact = resume.contact_info
         candidate_name_esc = escape_latex(contact.name or "TAJINDER SINGH")
         email_esc = escape_latex(contact.email or "tajinder.swe@gmail.com")
         phone_esc = escape_latex(contact.phone or "+91-9518671610")
+        loc_esc = escape_latex(contact.location or "")
 
         # Header contact line
         links = []
@@ -69,6 +179,8 @@ class LatexGenerator:
             links.append(f"\\href{{mailto:{email_esc}}}{{{email_esc}}}")
         if phone_esc:
             links.append(f"{phone_esc}")
+        if loc_esc:
+            links.append(f"{loc_esc}")
         if contact.linkedin:
             li_clean = escape_latex(contact.linkedin)
             links.append(f"\\href{{{li_clean}}}{{LinkedIn}}")
@@ -79,7 +191,8 @@ class LatexGenerator:
             lc_clean = escape_latex(contact.leetcode)
             links.append(f"\\href{{{lc_clean}}}{{LeetCode}}")
 
-        header_contact_line = " $|$ ".join(links)
+        sep = " $\\diamond$ " if tpl_key == "classic" else " $|$ "
+        header_contact_line = sep.join(links)
 
         # Summary
         summary_esc = escape_latex(resume.summary.strip())
@@ -91,7 +204,7 @@ class LatexGenerator:
             deg = edu.degree or "B.E. in Computer Science & Engineering"
             dates = f"{edu.start_date or '2023'} -- {edu.end_date or '2027'}"
             gpa = f"CGPA: {edu.gpa}" if edu.gpa else "CGPA: 8.04"
-            cw = ", ".join(edu.highlights) if edu.highlights else "Data Structures & Algorithms, OOP, Operating Systems, DBMS, Computer Networks"
+            cw = ", ".join(edu.highlights) if edu.highlights else "Data Structures & Algorithms, OOP, Operating Systems, DBMS, Computer Networks, Multithreading"
 
             edu_lines.append(f"\\textbf{{{escape_latex(inst)}}} \\hfill {dates}\\\\")
             edu_lines.append(f"{escape_latex(deg)} \\hfill {gpa}\\\\")
@@ -101,7 +214,7 @@ class LatexGenerator:
             edu_lines = [
                 r"\textbf{Chandigarh University, Mohali, Punjab} \hfill 2023 -- 2027\\",
                 r"B.E. in Computer Science \& Engineering \hfill CGPA: 8.04\\",
-                r"\textit{Relevant Coursework:} Data Structures \& Algorithms, OOP, Operating Systems, DBMS, Computer Networks"
+                r"\textit{Relevant Coursework:} Data Structures \& Algorithms, OOP, Operating Systems, DBMS, Computer Networks, Multithreading"
             ]
         education_section = "\n".join(edu_lines)
 
@@ -159,9 +272,10 @@ class LatexGenerator:
         achievements_list = resume.achievements
         if not achievements_list:
             achievements_list = [
-                "Solved 900+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
+                "Solved 1000+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
                 "Earned the 500 Days Coding Badge on LeetCode.",
-                "Completed NPTEL Cloud Computing certification with Silver grade."
+                "Completed NPTEL Cloud Computing certification with Silver grade.",
+                "Participated in multiple hackathons, applying software development and problem-solving skills to build solutions under time constraints."
             ]
 
         ach_bullets = "\n".join([f"  \\item {escape_latex(a)}" for a in achievements_list])
@@ -172,7 +286,7 @@ class LatexGenerator:
             f"\\end{{itemize}}"
         )
 
-        tex = LATEX_TEMPLATE
+        tex = base_template
         tex = tex.replace("__CANDIDATE_NAME__", candidate_name_esc)
         tex = tex.replace("__CONTACT_LINE__", header_contact_line)
         tex = tex.replace("__SUMMARY__", summary_esc)
