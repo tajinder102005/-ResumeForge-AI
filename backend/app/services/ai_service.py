@@ -461,13 +461,14 @@ class AIService:
             payload.custom_instructions
         )
 
-        # 3. Professional Summary (Clean 2 sentences, NO injected prompt text)
-        top_skills_str = ", ".join(jd_analysis.top_critical_skills[:3]) if jd_analysis.top_critical_skills else "distributed backend systems and cloud platforms"
+        # 3. Professional Summary (Clean, truthful, NO injected prompt text)
+        company_target_str = f" at {target_company}" if target_company and target_company != "Target Organization" else ""
+        role_target_str = f"{target_role} role" if target_role and "intern" not in target_role.lower() else "Software Development Internship"
         summary = (
-            f"Results-oriented {target_role} with proven engineering experience designing, deploying, and scaling "
-            f"robust technical solutions using {top_skills_str}. Adept at translating complex product requirements into "
-            f"high-performance, fault-tolerant architectures while ensuring clean code standards, comprehensive automated testing, "
-            f"and seamless cross-functional delivery tailored for {target_company}."
+            f"Computer Science undergraduate (B.E., 2027) with hands-on experience building back-end applications, "
+            f"microservices, and AI-integrated products using Java, Spring Boot, Node.js, React, and SQL/NoSQL databases. "
+            f"Strong in OOP, SOLID principles, REST APIs, event-driven systems (Kafka, RabbitMQ), and RAG/LLM features. "
+            f"Solved 900+ DSA problems. Seeking a {role_target_str}{company_target_str}."
         )
 
         # 4. Standardized Education
@@ -478,39 +479,42 @@ class AIService:
                 start_date="2023",
                 end_date="2027",
                 gpa="8.04",
-                highlights=["Data Structures & Algorithms", "Operating Systems", "DBMS", "Computer Networks", "OOP"]
+                highlights=["Data Structures & Algorithms", "OOP", "Operating Systems", "DBMS", "Computer Networks"]
             )
         ]
 
-        # 5. Intelligent Project Tailoring (Max 3 bullets, 2 for chat app)
+        # 5. Intelligent Project Tailoring (Truthful project bullets from candidate resume)
         tailored_projects: List[ProjectItem] = []
         enhancements: List[ProjectEnhancementRecommendation] = []
 
         default_projects = [
             {
-                "name": "JobFlow — Microservice-Based Recruitment Platform",
-                "tech": ["Java", "Spring Boot", "PostgreSQL", "Kafka"],
+                "name": "JobFlow — Microservice-Based Job Application Platform",
+                "tech": ["Java", "Spring Boot", "PostgreSQL", "Kafka", "RabbitMQ"],
                 "bullets": [
-                    "Engineered a distributed recruitment platform with Spring Boot microservices, supporting secure JWT-based RBAC.",
-                    "Integrated Apache Kafka event streaming for asynchronous notifications, reducing user notification latency by 40%.",
-                    "Optimized PostgreSQL query schemas and connection pooling, accelerating search response times across 50K+ records."
+                    "Architected a microservices platform for candidates, recruiters, and admins with auth, job, and application services.",
+                    "Built secured REST APIs with Spring Boot, API Gateway, Eureka, OpenFeign, JWT, RBAC, and Resilience4j.",
+                    "Implemented Kafka and RabbitMQ event-driven workflows for async notifications, with Zipkin distributed tracing.",
+                    "Used PostgreSQL for persistence and Elasticsearch for fast job and candidate search."
                 ]
             },
             {
                 "name": "FinTrack — Personal Finance Platform with AI Advisor",
-                "tech": ["React", "Node.js", "Express", "MongoDB", "Redis"],
+                "tech": ["React", "Node.js", "MongoDB", "Redis", "Pinecone"],
                 "bullets": [
-                    "Architected modular RESTful services for transaction analytics, expense categorization, and budget tracking.",
-                    "Implemented Redis caching for frequent financial queries, decreasing backend response times by 35%.",
-                    "Integrated secure authentication workflows using bcrypt and OAuth 2.0 to protect sensitive user accounts."
+                    "Built a full-stack MERN finance app for transaction tracking, budgeting, expense analytics, and reporting.",
+                    "Implemented JWT auth, bcrypt hashing, and Google/GitHub OAuth 2.0 with protected Express.js routes.",
+                    "Developed a RAG pipeline with embeddings and Pinecone vector search to give Gemini relevant financial context.",
+                    "Added Redis caching, real-time Socket.IO budget alerts, and React dashboards using Context API and Recharts."
                 ]
             },
             {
                 "name": "Real-Time Chat Application — Messaging Platform",
-                "tech": ["React", "Node.js", "Socket.IO", "Supabase"],
+                "tech": ["React", "Node.js", "Socket.IO", "Redis", "Supabase"],
                 "bullets": [
-                    "Developed persistent bidirectional WebSocket communication using Socket.IO for low-latency group messaging.",
-                    "Engineered message persistence and user discovery using Supabase with real-time online presence indicators."
+                    "Built a real-time messaging app with one-to-one and group chats using React, Node.js, and Socket.IO.",
+                    "Implemented user discovery via email, phone, and QR code, with typing indicators and online/offline presence.",
+                    "Used Redis Pub/Sub to sync messages across server instances; integrated Supabase for auth and message storage."
                 ]
             }
         ]
@@ -535,6 +539,12 @@ class AIService:
                 business_impact_rationale=f"Addresses key distributed systems requirements in the {target_role} role."
             ))
 
+        achievements_list = [
+            "Solved 900+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
+            "Earned the 500 Days Coding Badge on LeetCode.",
+            "Completed NPTEL Cloud Computing certification with Silver grade."
+        ]
+
         ats_report = AtsScorer.calculate_report(
             jd_analysis=jd_analysis,
             verified_skills=all_input_skills,
@@ -552,7 +562,7 @@ class AIService:
             projects=tailored_projects,
             education=edu_list,
             certifications=[],
-            achievements=[],
+            achievements=achievements_list,
             recommended_project_enhancements=enhancements,
             ats_report=ats_report,
             latex_code="",
