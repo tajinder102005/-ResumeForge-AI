@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: resumeforge-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_BASE
+        value: https://api.groq.com/openai/v1
+      - key: OPENAI_MODEL
+        value: openai/gpt-oss-120b
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ENVIRONMENT
+        value: production
