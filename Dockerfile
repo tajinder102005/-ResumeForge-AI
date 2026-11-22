@@ -7,7 +7,7 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
@@ -20,15 +20,12 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies & Tectonic LaTeX engine
+# Install system dependencies (universal packages without fragile versioned names)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
+    tar \
     fontconfig \
-    libfontconfig1 \
-    libgraphite2-3 \
-    libharfbuzz0b \
-    libicu72 \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and install pre-built Tectonic binary for Linux x86_64
