@@ -19,7 +19,7 @@ TEMPLATE_MODERN = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
@@ -71,7 +71,7 @@ TEMPLATE_CLASSIC = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage{times}
 \usepackage[left=0.52in,right=0.52in,top=0.42in,bottom=0.42in]{geometry}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
@@ -124,7 +124,7 @@ TEMPLATE_TECH = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[scaled=0.92]{helvet}
 \renewcommand\familydefault{\sfdefault}
 \usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
@@ -177,7 +177,7 @@ TEMPLATE_GOLD = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
@@ -237,7 +237,7 @@ TEMPLATE_NAVY = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[scaled=0.92]{helvet}
 \renewcommand\familydefault{\sfdefault}
 \usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage[explicit]{titlesec}
 \usepackage{xcolor}
@@ -295,7 +295,7 @@ TEMPLATE_EMERALD = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[scaled=0.92]{helvet}
 \renewcommand\familydefault{\sfdefault}
 \usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage[explicit]{titlesec}
 \usepackage{xcolor}
@@ -356,7 +356,7 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[left=0.55in,right=0.55in,top=0.42in,bottom=0.42in]{geometry}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}

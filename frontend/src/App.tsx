@@ -16,21 +16,71 @@ import {
 } from './types';
 import { fetchSystemStatus, optimizeResume } from './services/api';
 
+const STORAGE_KEY = 'resumeforge_active_session_v1';
+
+function loadPersistedSession() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (err) {
+    console.warn('Failed to parse saved session from localStorage:', err);
+    return null;
+  }
+}
+
+function savePersistedSession(data: any) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn('Failed to save session to localStorage:', err);
+  }
+}
+
 export const App: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<StepKey>('upload');
+  const initialData = React.useMemo(() => loadPersistedSession(), []);
+
+  const [currentStep, setCurrentStep] = useState<StepKey>(initialData?.currentStep || 'upload');
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
 
   // Core App State
-  const [extractedResume, setExtractedResume] = useState<ExtractedResume | null>(null);
-  const [companyName, setCompanyName] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  const [jdAnalysis, setJdAnalysis] = useState<JobDescriptionAnalysis | null>(null);
-  const [skillsVerification, setSkillsVerification] = useState<CandidateSkillVerificationItem[]>([]);
-  const [projectNotes, setProjectNotes] = useState<Record<string, string>>({});
-  const [optimizationMode, setOptimizationMode] = useState<'aggressive' | 'enhancement_only'>('aggressive');
-  const [optimizedResume, setOptimizedResume] = useState<OptimizedResume | null>(null);
+  const [extractedResume, setExtractedResume] = useState<ExtractedResume | null>(initialData?.extractedResume || null);
+  const [companyName, setCompanyName] = useState(initialData?.companyName || '');
+  const [jobTitle, setJobTitle] = useState(initialData?.jobTitle || '');
+  const [jobDescription, setJobDescription] = useState(initialData?.jobDescription || '');
+  const [jdAnalysis, setJdAnalysis] = useState<JobDescriptionAnalysis | null>(initialData?.jdAnalysis || null);
+  const [skillsVerification, setSkillsVerification] = useState<CandidateSkillVerificationItem[]>(initialData?.skillsVerification || []);
+  const [projectNotes, setProjectNotes] = useState<Record<string, string>>(initialData?.projectNotes || {});
+  const [optimizationMode, setOptimizationMode] = useState<'aggressive' | 'enhancement_only'>(initialData?.optimizationMode || 'aggressive');
+  const [optimizedResume, setOptimizedResume] = useState<OptimizedResume | null>(initialData?.optimizedResume || null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Automatically save to localStorage on any state change
+  useEffect(() => {
+    savePersistedSession({
+      currentStep,
+      extractedResume,
+      companyName,
+      jobTitle,
+      jobDescription,
+      jdAnalysis,
+      skillsVerification,
+      projectNotes,
+      optimizationMode,
+      optimizedResume,
+    });
+  }, [
+    currentStep,
+    extractedResume,
+    companyName,
+    jobTitle,
+    jobDescription,
+    jdAnalysis,
+    skillsVerification,
+    projectNotes,
+    optimizationMode,
+    optimizedResume,
+  ]);
 
   useEffect(() => {
     fetchSystemStatus()
@@ -86,6 +136,21 @@ export const App: React.FC = () => {
     setProjectNotes({});
     setOptimizedResume(null);
     setCurrentStep('job');
+  };
+
+  const handleFullReset = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (_) {}
+    setExtractedResume(null);
+    setCompanyName('');
+    setJobTitle('');
+    setJobDescription('');
+    setJdAnalysis(null);
+    setSkillsVerification([]);
+    setProjectNotes({});
+    setOptimizedResume(null);
+    setCurrentStep('upload');
   };
 
   const handleRegenerateWithInstructions = async (instructions: string) => {
@@ -185,6 +250,7 @@ export const App: React.FC = () => {
           <ResumePreviewStep
             optimized={optimizedResume}
             onReset={handleReset}
+            onFullReset={handleFullReset}
             onRegenerateWithInstructions={handleRegenerateWithInstructions}
             onNavigateToStep={setCurrentStep}
             isRegenerating={isGenerating}

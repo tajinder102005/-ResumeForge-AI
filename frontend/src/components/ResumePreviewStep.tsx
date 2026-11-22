@@ -40,6 +40,7 @@ import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl, getDocxDownloadUrl
 interface ResumePreviewStepProps {
   optimized: OptimizedResume;
   onReset: () => void;
+  onFullReset?: () => void;
   onRegenerateWithInstructions: (instructions: string) => Promise<void>;
   onNavigateToStep: (step: 'job' | 'verification' | 'projects') => void;
   isRegenerating: boolean;
@@ -57,6 +58,7 @@ const QUICK_SUGGESTIONS = [
 export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
   optimized,
   onReset,
+  onFullReset,
   onRegenerateWithInstructions,
   onNavigateToStep,
   isRegenerating,
@@ -295,10 +297,22 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
           <button
             onClick={onReset}
             className="px-3 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 text-xs transition-colors flex items-center space-x-1.5"
+            title="Keep current resume, target a different job description"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>New Role</span>
           </button>
+
+          {onFullReset && (
+            <button
+              onClick={onFullReset}
+              className="px-3 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-rose-300 hover:bg-rose-950/30 text-xs transition-colors flex items-center space-x-1.5"
+              title="Upload a completely new resume file from Stage 1"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+              <span>Upload New Resume</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -629,6 +643,25 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                 <span>Download PDF</span>
               </a>
             </div>
+          </div>
+
+          {/* Interactive Links Helper Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+            <div className="flex items-center space-x-2">
+              <Globe className="w-4 h-4 text-brand-400 flex-shrink-0" />
+              <span>
+                <strong>Opening Links:</strong> Use the verified contact badges above to open Portfolio/socials in a new tab without leaving this page.
+              </span>
+            </div>
+            <a
+              href={getPdfViewUrl(optimized.resume_id) + `?t=${pdfTimestamp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-brand-600/30 hover:bg-brand-600/50 text-brand-300 border border-brand-500/40 text-[11px] font-semibold transition-colors flex-shrink-0 self-start sm:self-auto"
+            >
+              <ExternalLink className="w-3 h-3" />
+              <span>Open PDF in Dedicated Tab</span>
+            </a>
           </div>
 
           <div className="w-full bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-800 shadow-2xl flex justify-center">
