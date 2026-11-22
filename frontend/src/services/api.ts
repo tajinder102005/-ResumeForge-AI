@@ -129,6 +129,29 @@ export async function switchTemplate(params: {
   return res.json();
 }
 
+export async function updateContactInfo(params: {
+  resume_id: string;
+  contact_info: any;
+  template_name?: string;
+}): Promise<{
+  success: boolean;
+  contact_info: any;
+  latex_code: string;
+  pdf_url: string;
+  error?: string;
+}> {
+  const res = await fetch(`${API_BASE}/api/contact/update`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to update contact info.');
+  }
+  return res.json();
+}
+
 export async function uploadPhoto(resumeId: string, file: File): Promise<{
   success: boolean;
   photo_url?: string;

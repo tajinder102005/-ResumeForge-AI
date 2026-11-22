@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from backend.app.config import settings
-from backend.app.models.resume import ExtractedResume
+from backend.app.models.resume import ExtractedResume, ContactInfo
 from backend.app.models.job import JobDescriptionAnalysis
 from backend.app.models.optimization import (
     CandidateSkillVerificationItem,
@@ -68,6 +68,16 @@ class TemplateSwitchRequest(BaseModel):
     resume_id: str
     template_name: str  # "modern" | "classic" | "tech" | "gold" | "navy" | "emerald" | "sidebar_photo"
     photo_filename: Optional[str] = None
+
+
+class UpdateContactRequest(BaseModel):
+    resume_id: str
+    contact_info: ContactInfo
+    template_name: Optional[str] = "sidebar_photo"
+
+
+# Fast compiled template cache: f"{resume_id}_{template_name}" -> {latex_code}
+TEMPLATE_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 @app.get("/health")
@@ -186,10 +196,33 @@ def switch_template(req: TemplateSwitchRequest):
     """
     Regenerates LaTeX source with chosen theme (modern | classic | tech | gold | navy | emerald | sidebar_photo)
     and recompiles PDF with Tectonic without re-running LLM optimization.
+    Features instant cache lookup for previously compiled themes for near 0-ms switching.
     """
     optimized = OPTIMIZED_RESUME_STORE.get(req.resume_id) or DatabaseService.get_optimized_resume(req.resume_id)
     if not optimized:
         raise HTTPException(status_code=404, detail="Optimized resume not found. Please generate resume first.")
+
+    cache_key = f"{req.resume_id}_{req.template_name}"
+    cached_pdf_path = settings.STORAGE_DIR / "pdfs" / f"{req.resume_id}_{req.template_name}.pdf"
+    target_pdf_path = settings.STORAGE_DIR / "pdfs" / f"{req.resume_id}.pdf"
+
+    # Fast path: Serve from pre-compiled cache if available
+    if cache_key in TEMPLATE_CACHE and cached_pdf_path.exists():
+        try:
+            shutil.copyfile(cached_pdf_path, target_pdf_path)
+            cached_tex = TEMPLATE_CACHE[cache_key]["latex_code"]
+            optimized.latex_code = cached_tex
+            OPTIMIZED_RESUME_STORE[req.resume_id] = optimized
+            DatabaseService.save_optimized_resume(optimized, template_name=req.template_name)
+            return {
+                "success": True,
+                "template_name": req.template_name,
+                "latex_code": cached_tex,
+                "pdf_url": f"/api/download/pdf/{req.resume_id}",
+                "cached": True
+            }
+        except Exception as e:
+            logger.warning(f"Template cache copy error: {e}")
 
     tex_code = LatexGenerator.generate(
         optimized,
@@ -201,6 +234,13 @@ def switch_template(req: TemplateSwitchRequest):
     comp_result = LatexCompiler.compile_latex(tex_code, req.resume_id, optimized)
     if comp_result["success"]:
         optimized.pdf_generated = True
+        # Cache compiled PDF file for instant repeated switches
+        try:
+            if target_pdf_path.exists():
+                shutil.copyfile(target_pdf_path, cached_pdf_path)
+            TEMPLATE_CACHE[cache_key] = {"latex_code": tex_code}
+        except Exception as e:
+            logger.warning(f"Could not write to template cache: {e}")
 
     OPTIMIZED_RESUME_STORE[req.resume_id] = optimized
     DatabaseService.save_optimized_resume(optimized, template_name=req.template_name)
@@ -211,6 +251,56 @@ def switch_template(req: TemplateSwitchRequest):
         "latex_code": tex_code,
         "pdf_url": f"/api/download/pdf/{req.resume_id}",
         "error": comp_result.get("error")
+    }
+
+
+@app.post("/api/contact/update")
+def update_contact_info(req: UpdateContactRequest):
+    """
+    Directly updates candidate contact info & profile URLs (LinkedIn, GitHub, LeetCode, Portfolio, Email, Phone, etc.),
+    regenerates LaTeX markup using the active template, recompiles with Tectonic,
+    and updates cache and persistent database.
+    """
+    optimized = OPTIMIZED_RESUME_STORE.get(req.resume_id) or DatabaseService.get_optimized_resume(req.resume_id)
+    if not optimized:
+        raise HTTPException(status_code=404, detail="Optimized resume not found.")
+
+    optimized.contact_info = req.contact_info
+    tpl = req.template_name or "sidebar_photo"
+
+    # Invalidate cached template PDFs for this resume because contact info changed
+    keys_to_clear = [k for k in TEMPLATE_CACHE if k.startswith(f"{req.resume_id}_")]
+    for k in keys_to_clear:
+        del TEMPLATE_CACHE[k]
+
+    tex_code = LatexGenerator.generate(
+        optimized,
+        template_name=tpl,
+        photo_filename=f"photo_{req.resume_id}.png"
+    )
+    optimized.latex_code = tex_code
+
+    comp_res = LatexCompiler.compile_latex(tex_code, req.resume_id, optimized)
+    if comp_res["success"]:
+        optimized.pdf_generated = True
+        target_pdf = settings.STORAGE_DIR / "pdfs" / f"{req.resume_id}.pdf"
+        cached_pdf = settings.STORAGE_DIR / "pdfs" / f"{req.resume_id}_{tpl}.pdf"
+        if target_pdf.exists():
+            try:
+                shutil.copyfile(target_pdf, cached_pdf)
+                TEMPLATE_CACHE[f"{req.resume_id}_{tpl}"] = {"latex_code": tex_code}
+            except Exception:
+                pass
+
+    OPTIMIZED_RESUME_STORE[req.resume_id] = optimized
+    DatabaseService.save_optimized_resume(optimized, template_name=tpl)
+
+    return {
+        "success": comp_res["success"],
+        "contact_info": optimized.contact_info,
+        "latex_code": tex_code,
+        "pdf_url": f"/api/download/pdf/{req.resume_id}",
+        "error": comp_res.get("error")
     }
 
 
