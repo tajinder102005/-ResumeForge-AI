@@ -26,7 +26,8 @@ TEMPLATE_MODERN = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage{fontawesome5}
 
 \definecolor{navy}{RGB}{20, 20, 20}
-\definecolor{iconblue}{RGB}{2, 111, 199}
+\definecolor{iconblue}{RGB}{20, 20, 20}
+\definecolor{accentgreen}{RGB}{20, 20, 20}
 \newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
@@ -79,6 +80,7 @@ TEMPLATE_CLASSIC = r"""\documentclass[letterpaper,10pt]{article}
 
 \definecolor{navy}{RGB}{15, 43, 92}
 \definecolor{iconblue}{RGB}{15, 43, 92}
+\definecolor{accentgreen}{RGB}{15, 43, 92}
 \newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
@@ -132,7 +134,8 @@ TEMPLATE_TECH = r"""\documentclass[letterpaper,10pt]{article}
 
 \definecolor{techblue}{RGB}{15, 60, 120}
 \definecolor{navy}{RGB}{15, 60, 120}
-\definecolor{iconblue}{RGB}{2, 111, 199}
+\definecolor{iconblue}{RGB}{15, 60, 120}
+\definecolor{accentgreen}{RGB}{15, 60, 120}
 \newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
@@ -187,6 +190,7 @@ TEMPLATE_GOLD = r"""\documentclass[letterpaper,10pt]{article}
 \definecolor{onyxblack}{RGB}{18, 18, 18}
 \definecolor{navy}{RGB}{18, 18, 18}
 \definecolor{iconblue}{RGB}{184, 134, 11}
+\definecolor{accentgreen}{RGB}{184, 134, 11}
 \newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
@@ -246,7 +250,8 @@ TEMPLATE_NAVY = r"""\documentclass[letterpaper,10pt]{article}
 \definecolor{navyaccent}{RGB}{15, 43, 92}
 \definecolor{navybanner}{RGB}{230, 238, 248}
 \definecolor{navy}{RGB}{15, 43, 92}
-\definecolor{iconblue}{RGB}{2, 111, 199}
+\definecolor{iconblue}{RGB}{15, 43, 92}
+\definecolor{accentgreen}{RGB}{15, 43, 92}
 \newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
@@ -305,6 +310,9 @@ TEMPLATE_EMERALD = r"""\documentclass[letterpaper,10pt]{article}
 \definecolor{emeraldbanner}{RGB}{233, 246, 239}
 \definecolor{navy}{RGB}{13, 92, 58}
 \definecolor{iconblue}{RGB}{13, 92, 58}
+\definecolor{accentgreen}{RGB}{13, 92, 58}
+\definecolor{bordergreen}{RGB}{13, 92, 58}
+\definecolor{BORDERGREEN}{RGB}{13, 92, 58}
 \newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
@@ -354,8 +362,9 @@ __ACHIEVEMENTS_SECTION__
 TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage[left=0.55in,right=0.55in,top=0.42in,bottom=0.42in]{geometry}
+\usepackage[scaled=0.93]{helvet}
+\renewcommand\familydefault{\sfdefault}
+\usepackage[left=0.55in,right=0.55in,top=0.38in,bottom=0.38in]{geometry}
 \usepackage[hidelinks,pdfnewwindow=true]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
@@ -364,12 +373,13 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage{tikz}
 \usepackage{fontawesome5}
 
-\definecolor{headerdark}{RGB}{20, 25, 35}
-\definecolor{accentgreen}{RGB}{35, 95, 65}
-\definecolor{accentstrip}{RGB}{35, 95, 65}
-\definecolor{lightgray}{RGB}{210, 218, 226}
-\definecolor{iconblue}{RGB}{2, 111, 199}
-\definecolor{slate}{RGB}{100, 115, 130}
+\definecolor{headerdark}{RGB}{15, 48, 38}      % Deep Nordic Forest Green
+\definecolor{accentgreen}{RGB}{28, 102, 68}    % Rich Executive Emerald
+\definecolor{accentstrip}{RGB}{28, 102, 68}    % Vertical Left Accent Strip
+\definecolor{bordergreen}{RGB}{35, 120, 80}    % Crisp Emerald for rules & photo border
+\definecolor{BORDERGREEN}{RGB}{35, 120, 80}    % Case-safe alias for titlesec uppercase
+\definecolor{iconblue}{RGB}{28, 102, 68}       % 100% Matching Emerald Icons
+\definecolor{pipesep}{RGB}{160, 185, 172}      % Soft sage pipe separator
 
 \newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
@@ -378,10 +388,14 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 \raggedright
 \raggedbottom
 \urlstyle{same}
-\linespread{1.04}
+\linespread{1.03}
 
-% Clean modern section heading with rule
-\titleformat{\section}{\large\bfseries\color{headerdark}}{}{0em}{}[\color{headerdark}\titlerule]
+% Modern executive heading with 1.2pt emerald rule
+\titleformat{\section}
+  {\large\bfseries\color{headerdark}}
+  {}{0em}
+  {\uppercase}
+  [\vspace{1pt}{\color{bordergreen}\titlerule[1.2pt]}]
 \titlespacing*{\section}{0pt}{7pt}{3pt}
 
 \setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
@@ -398,19 +412,19 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 \begin{minipage}[t]{0.74\linewidth}
   \vspace{0pt}
   {\Huge\bfseries\color{headerdark} __CANDIDATE_NAME__}\\[3pt]
-  {\large\itshape\color{accentgreen} __TARGET_ROLE__}\\[6pt]
+  {\large\bfseries\color{accentgreen} __TARGET_ROLE__}\\[6pt]
   \small
   {\color{iconblue}\faMapMarker*}\, __LOCATION__
-  \quad{\color{iconblue}\textbar}\quad
+  \quad{\color{pipesep}\textbar}\quad
   {\color{iconblue}\faPhone*}\, __PHONE__
-  \quad{\color{iconblue}\textbar}\quad
+  \quad{\color{pipesep}\textbar}\quad
   \iconlink{\faEnvelope}{mailto:__EMAIL__}{__EMAIL__}\\[4pt]
   \iconlink{\faLinkedin}{__LINKEDIN_URL__}{tajinderasingh}
-  \quad{\color{iconblue}\textbar}\quad
+  \quad{\color{pipesep}\textbar}\quad
   \iconlink{\faGithub}{__GITHUB_URL__}{tajinder102005}
-  \quad{\color{iconblue}\textbar}\quad
+  \quad{\color{pipesep}\textbar}\quad
   \iconlink{\faCode}{__LEETCODE_URL__}{Rednijat123}
-  \quad{\color{iconblue}\textbar}\quad
+  \quad{\color{pipesep}\textbar}\quad
   \iconlink{\faGlobe}{__PORTFOLIO_URL__}{Portfolio}
 \end{minipage}%
 \hfill
@@ -420,11 +434,11 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
   __AVATAR_BLOCK__
 \end{minipage}
 
-\vspace{6pt}
-\hrule height 0.6pt
-\vspace{4pt}
+\vspace{5pt}
+{\color{bordergreen}\hrule height 0.8pt}
+\vspace{3pt}
 
-\section{Profile}
+\section{Professional Summary}
 __SUMMARY__
 
 \section{Education}
@@ -622,35 +636,89 @@ class LatexGenerator:
 
         if photo_found:
             avatar_block = (
-                r"\begin{tikzpicture}"
-                r"\draw[lightgray, line width=0.8pt, rounded corners=3pt] (-0.02in,-0.02in) rectangle (1.27in, 1.27in);"
-                r"\clip[rounded corners=2pt] (0,0) rectangle (1.25in, 1.25in);"
-                f"\\node[anchor=south west, inner sep=0pt] at (0,0) {{\\includegraphics[width=1.25in,height=1.25in]{{{photo_found}}}}};"
+                r"\begin{tikzpicture}" + "\n"
+                r"  \draw[bordergreen, line width=1.2pt, rounded corners=3.5pt] (-0.02in,-0.02in) rectangle (1.27in, 1.27in);" + "\n"
+                r"  \clip[rounded corners=2.5pt] (0,0) rectangle (1.25in, 1.25in);" + "\n"
+                f"  \\node[anchor=south west, inner sep=0pt] at (0,0) {{\\includegraphics[width=1.25in,height=1.25in]{{{photo_found}}}}};" + "\n"
                 r"\end{tikzpicture}"
             )
         else:
             avatar_block = (
-                r"\begin{tikzpicture}"
-                r"\draw[lightgray, fill=slate!8, line width=0.8pt, rounded corners=2pt] (0,0) rectangle (1.25in, 1.25in);"
-                r"\node at (0.625in, 0.625in) {\color{accentgreen}\Huge\faUser};"
+                r"\begin{tikzpicture}" + "\n"
+                r"  \draw[bordergreen, fill=accentgreen!10, line width=1.2pt, rounded corners=3.5pt] (0,0) rectangle (1.25in, 1.25in);" + "\n"
+                r"  \node at (0.625in, 0.625in) {\color{accentgreen}\Huge\faUser};" + "\n"
                 r"\end{tikzpicture}"
             )
 
         # Projects Section
         proj_blocks = []
+        known_tech_keywords = {
+            "java", "python", "c++", "c#", "javascript", "typescript", "sql", "react", "angular", "node.js",
+            "spring boot", "spring cloud", "postgresql", "mysql", "mongodb", "redis", "docker", "kubernetes",
+            "aws", "gcp", "azure", "rabbitmq", "kafka", "express.js", "socket.io", "pinecone", "gemini",
+            "supabase", "graphql", "restful apis", "rest apis", "jwt", "oauth", "eureka", "resilience4j"
+        }
+
         for p in resume.projects:
-            proj_name_esc = escape_latex(p.name)
-            techs = escape_latex(", ".join(p.technologies)) if p.technologies else ""
-            heading = f"\\textbf{{{proj_name_esc}}}"
-            if techs:
-                heading += f" \\hfill \\textit{{{techs}}}"
+            raw_techs = list(p.technologies) if p.technologies else []
+            raw_bullets = list(p.bullet_points) if p.bullet_points else []
+
+            # Check if first bullet point is actually a list of technologies
+            if raw_bullets:
+                first_bullet = raw_bullets[0].strip().lstrip("-*• ")
+                parts = [part.strip().lower() for part in first_bullet.split(",") if part.strip()]
+                action_words = {"built", "developed", "designed", "implemented", "architected", "engineered",
+                                "created", "optimized", "integrated", "spearheaded", "leveraged", "orchestrated",
+                                "scaled", "configured", "solved", "earned"}
+                first_word = first_bullet.split()[0].lower().rstrip(":,") if first_bullet.split() else ""
+                if first_word not in action_words and len(parts) >= 2:
+                    tech_matches = sum(1 for part in parts if any(k in part for k in known_tech_keywords))
+                    if tech_matches >= len(parts) * 0.4:
+                        if not raw_techs:
+                            raw_techs = [part.strip() for part in first_bullet.split(",") if part.strip()]
+                        raw_bullets = raw_bullets[1:]
+
+            # Merge any bullets that were accidentally split across newlines
+            clean_bullets = []
+            for b in raw_bullets:
+                b_stripped = b.strip().lstrip("-*• ")
+                if not b_stripped:
+                    continue
+                if clean_bullets and (b_stripped[0].islower() or clean_bullets[-1].endswith((',', 'and', 'with', 'for', 'the', 'or'))):
+                    clean_bullets[-1] = clean_bullets[-1] + " " + b_stripped
+                else:
+                    clean_bullets.append(b_stripped)
+
+            # Format project heading with clean name and subtitle
+            proj_name = p.name.strip()
+            name_part = proj_name
+            sub_part = ""
+            for sep in [" — ", " - ", " – "]:
+                if sep in proj_name:
+                    splits = proj_name.split(sep, 1)
+                    name_part = splits[0].strip()
+                    sub_part = splits[1].strip()
+                    break
+
+            name_esc = escape_latex(name_part)
+            sub_esc = escape_latex(sub_part)
+            techs_esc = escape_latex(", ".join(raw_techs)) if raw_techs else ""
+
+            if sub_part and techs_esc:
+                heading = f"\\textbf{{{name_esc}}} $|$ \\textit{{{sub_esc}}} \\hfill \\footnotesize\\color{{accentgreen}}\\textbf{{{techs_esc}}}"
+            elif techs_esc:
+                heading = f"\\textbf{{{name_esc}}} \\hfill \\footnotesize\\color{{accentgreen}}\\textbf{{{techs_esc}}}"
+            elif sub_part:
+                heading = f"\\textbf{{{name_esc}}} \\hfill \\textit{{{sub_esc}}}"
+            else:
+                heading = f"\\textbf{{{name_esc}}}"
 
             bullets_latex = []
-            for b in p.bullet_points:
-                b_clean = escape_latex(b.strip().lstrip("-*• "))
+            for b in clean_bullets[:3]: # Keep to top 3 bullets for 1-page compliance
+                b_clean = escape_latex(b)
                 if b_clean:
                     bullets_latex.append(f"  \\item {b_clean}")
-            
+
             if not bullets_latex:
                 continue
 
