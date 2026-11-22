@@ -40,7 +40,25 @@ function savePersistedSession(data: any) {
 export const App: React.FC = () => {
   const initialData = React.useMemo(() => loadPersistedSession(), []);
 
-  const [currentStep, setCurrentStep] = useState<StepKey>(initialData?.currentStep || 'upload');
+  const getInitialStep = (): StepKey => {
+    try {
+      const hash = window.location.hash.toLowerCase();
+      if ((hash.includes('result') || hash.includes('step=result')) && initialData?.optimizedResume) {
+        return 'result';
+      }
+      if (hash.includes('upload')) return 'upload';
+    } catch (_) {}
+
+    if (initialData?.optimizedResume) {
+      return 'result';
+    }
+    if (initialData?.currentStep) {
+      return initialData.currentStep;
+    }
+    return 'upload';
+  };
+
+  const [currentStep, setCurrentStep] = useState<StepKey>(getInitialStep);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
 
   // Core App State
@@ -55,8 +73,41 @@ export const App: React.FC = () => {
   const [optimizedResume, setOptimizedResume] = useState<OptimizedResume | null>(initialData?.optimizedResume || null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Automatically save to localStorage on any state change
+  // Sync URL hash with current step for instant browser back/forward navigation support
   useEffect(() => {
+    try {
+      window.location.hash = `step=${currentStep}`;
+    } catch (_) {}
+  }, [currentStep]);
+
+  // Listen to browser Back/Forward arrow navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const hash = window.location.hash.toLowerCase();
+        if ((hash.includes('result') || hash.includes('step=result')) && (optimizedResume || initialData?.optimizedResume)) {
+          setCurrentStep('result');
+        } else if (hash.includes('job') && (extractedResume || initialData?.extractedResume)) {
+          setCurrentStep('job');
+        } else if (hash.includes('upload')) {
+          setCurrentStep('upload');
+        }
+      } catch (_) {}
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, [optimizedResume, extractedResume, initialData]);
+
+  // Automatically save to localStorage on any state change, but do NOT wipe stored state with empty initial state
+  useEffect(() => {
+    if (!extractedResume && !optimizedResume && !initialData?.extractedResume) {
+      return;
+    }
     savePersistedSession({
       currentStep,
       extractedResume,
@@ -80,6 +131,7 @@ export const App: React.FC = () => {
     projectNotes,
     optimizationMode,
     optimizedResume,
+    initialData,
   ]);
 
   useEffect(() => {

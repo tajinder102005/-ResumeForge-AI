@@ -82,6 +82,15 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
   const ats = optimized.ats_report;
   const contact = optimized.contact_info;
 
+  const linkedinUrl = contact?.linkedin || 'https://linkedin.com/in/tajinderasingh';
+  const githubUrl = contact?.github || 'https://github.com/tajinder102005';
+  const leetcodeUrl = contact?.leetcode || 'https://leetcode.com/u/Rednijat123/';
+  const portfolioUrl = (contact?.portfolio && !contact.portfolio.toLowerCase().includes('socket.io')) 
+    ? contact.portfolio 
+    : (contact?.website && !contact.website.toLowerCase().includes('socket.io')) 
+      ? contact.website 
+      : 'https://portfolio-website1-n47b.vercel.app/';
+
   const handleCopyLatex = () => {
     navigator.clipboard.writeText(editableLatex);
     setCopied(true);
@@ -220,47 +229,41 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                 <span>{contact.phone}</span>
               </span>
             )}
-            {contact.linkedin && (
-              <a
-                href={contact.linkedin}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-950/40 text-blue-300 border border-blue-800/50 hover:bg-blue-900/40 transition-colors"
-              >
-                <Linkedin className="w-3 h-3 text-blue-400" />
-                <span>LinkedIn</span>
-              </a>
-            )}
-            {contact.github && (
-              <a
-                href={contact.github}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-slate-800 text-purple-300 border border-purple-800/50 hover:bg-slate-700 transition-colors"
-              >
-                <Github className="w-3 h-3 text-purple-400" />
-                <span>GitHub</span>
-              </a>
-            )}
-            {contact.leetcode && (
-              <a
-                href={contact.leetcode}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/50 hover:bg-amber-900/40 transition-colors"
-              >
-                <Code2 className="w-3 h-3 text-amber-400" />
-                <span>LeetCode</span>
-              </a>
-            )}
             <a
-              href={contact.portfolio || contact.website || 'https://portfolio-website1-n47b.vercel.app/'}
+              href={linkedinUrl}
               target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-teal-950/40 text-teal-300 border border-teal-800/50 hover:bg-teal-900/40 transition-colors"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-950/40 text-blue-300 border border-blue-800/50 hover:bg-blue-900/40 transition-colors"
+            >
+              <Linkedin className="w-3 h-3 text-blue-400" />
+              <span>LinkedIn</span>
+            </a>
+            <a
+              href={githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-slate-800 text-purple-300 border border-purple-800/50 hover:bg-slate-700 transition-colors"
+            >
+              <Github className="w-3 h-3 text-purple-400" />
+              <span>GitHub</span>
+            </a>
+            <a
+              href={leetcodeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/50 hover:bg-amber-900/40 transition-colors"
+            >
+              <Code2 className="w-3 h-3 text-amber-400" />
+              <span>LeetCode</span>
+            </a>
+            <a
+              href={portfolioUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-teal-950/40 text-teal-300 border border-teal-800/50 hover:bg-teal-900/40 transition-colors font-medium"
             >
               <Globe className="w-3 h-3 text-teal-400" />
-              <span>Portfolio</span>
+              <span>Portfolio Website</span>
             </a>
           </div>
         </div>
@@ -645,23 +648,66 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
             </div>
           </div>
 
-          {/* Interactive Links Helper Banner */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
-            <div className="flex items-center space-x-2">
-              <Globe className="w-4 h-4 text-brand-400 flex-shrink-0" />
-              <span>
-                <strong>Opening Links:</strong> Use the verified contact badges above to open Portfolio/socials in a new tab without leaving this page.
-              </span>
+          {/* Guaranteed New-Tab Quick Links Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-slate-900 via-teal-950/25 to-slate-900 border border-teal-500/40 text-xs shadow-xl">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center flex-shrink-0">
+                <Globe className="w-4 h-4 text-teal-400" />
+              </div>
+              <div>
+                <span className="font-bold text-white block">Verified Links (Guaranteed New Tab ↗):</span>
+                <span className="text-[11px] text-slate-400">
+                  Click any button below to open your Portfolio & social profiles directly in a new tab without leaving Stage 6.
+                </span>
+              </div>
             </div>
-            <a
-              href={getPdfViewUrl(optimized.resume_id) + `?t=${pdfTimestamp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-brand-600/30 hover:bg-brand-600/50 text-brand-300 border border-brand-500/40 text-[11px] font-semibold transition-colors flex-shrink-0 self-start sm:self-auto"
-            >
-              <ExternalLink className="w-3 h-3" />
-              <span>Open PDF in Dedicated Tab</span>
-            </a>
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href={portfolioUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-xs font-bold transition-all shadow-sm hover:scale-[1.02]"
+              >
+                <Globe className="w-3.5 h-3.5 text-teal-300" />
+                <span>Portfolio Website ↗</span>
+              </a>
+              <a
+                href={linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-xs font-bold transition-all shadow-sm hover:scale-[1.02]"
+              >
+                <Linkedin className="w-3.5 h-3.5 text-blue-300" />
+                <span>LinkedIn ↗</span>
+              </a>
+              <a
+                href={githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold transition-all shadow-sm hover:scale-[1.02]"
+              >
+                <Github className="w-3.5 h-3.5 text-purple-300" />
+                <span>GitHub ↗</span>
+              </a>
+              <a
+                href={leetcodeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-sm hover:scale-[1.02]"
+              >
+                <Code2 className="w-3.5 h-3.5 text-amber-300" />
+                <span>LeetCode ↗</span>
+              </a>
+              <a
+                href={getPdfViewUrl(optimized.resume_id) + `?t=${pdfTimestamp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-all"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-brand-400" />
+                <span>Full Tab PDF ↗</span>
+              </a>
+            </div>
           </div>
 
           <div className="w-full bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-800 shadow-2xl flex justify-center">
