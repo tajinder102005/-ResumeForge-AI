@@ -1,4 +1,5 @@
 import logging
+import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
@@ -64,7 +65,8 @@ class CompileRequest(BaseModel):
 
 class TemplateSwitchRequest(BaseModel):
     resume_id: str
-    template_name: str  # "modern" | "classic" | "tech"
+    template_name: str  # "modern" | "classic" | "tech" | "gold" | "navy" | "emerald" | "sidebar_photo"
+    photo_filename: Optional[str] = None
 
 
 @app.get("/health")
@@ -181,14 +183,18 @@ def optimize_resume(payload: CandidateSkillConfirmationPayload):
 @app.post("/api/template/switch")
 def switch_template(req: TemplateSwitchRequest):
     """
-    Regenerates LaTeX source with chosen theme (modern | classic | tech)
+    Regenerates LaTeX source with chosen theme (modern | classic | tech | gold | navy | emerald | sidebar_photo)
     and recompiles PDF with Tectonic without re-running LLM optimization.
     """
     optimized = OPTIMIZED_RESUME_STORE.get(req.resume_id) or DatabaseService.get_optimized_resume(req.resume_id)
     if not optimized:
         raise HTTPException(status_code=404, detail="Optimized resume not found. Please generate resume first.")
 
-    tex_code = LatexGenerator.generate(optimized, template_name=req.template_name)
+    tex_code = LatexGenerator.generate(
+        optimized,
+        template_name=req.template_name,
+        photo_filename=req.photo_filename
+    )
     optimized.latex_code = tex_code
 
     comp_result = LatexCompiler.compile_latex(tex_code, req.resume_id, optimized)
@@ -205,6 +211,65 @@ def switch_template(req: TemplateSwitchRequest):
         "pdf_url": f"/api/download/pdf/{req.resume_id}",
         "error": comp_result.get("error")
     }
+
+
+@app.post("/api/photo/upload/{resume_id}")
+async def upload_photo(resume_id: str, file: UploadFile = File(...)):
+    """
+    Uploads candidate headshot photo, saves to storage/photos/,
+    and recompiles the resume with the sidebar_photo theme.
+    """
+    photos_dir = settings.STORAGE_DIR / "photos"
+    photos_dir.mkdir(parents=True, exist_ok=True)
+    
+    ext = Path(file.filename or "photo.png").suffix.lower()
+    if ext not in [".png", ".jpg", ".jpeg"]:
+        ext = ".png"
+    photo_filename = f"photo_{resume_id}{ext}"
+    photo_path = photos_dir / photo_filename
+    
+    with open(photo_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    tex_dir = settings.STORAGE_DIR / "tex"
+    tex_dir.mkdir(parents=True, exist_ok=True)
+    tex_photo = tex_dir / photo_filename
+    shutil.copyfile(photo_path, tex_photo)
+    
+    optimized = OPTIMIZED_RESUME_STORE.get(resume_id) or DatabaseService.get_optimized_resume(resume_id)
+    if optimized:
+        tex_code = LatexGenerator.generate(
+            optimized,
+            template_name="sidebar_photo",
+            photo_filename=photo_filename
+        )
+        optimized.latex_code = tex_code
+        comp_res = LatexCompiler.compile_latex(tex_code, resume_id, optimized)
+        if comp_res["success"]:
+            optimized.pdf_generated = True
+        OPTIMIZED_RESUME_STORE[resume_id] = optimized
+        DatabaseService.save_optimized_resume(optimized, template_name="sidebar_photo")
+        return {
+            "success": True,
+            "photo_url": f"/api/photo/{resume_id}",
+            "template_name": "sidebar_photo",
+            "latex_code": tex_code,
+            "pdf_url": f"/api/download/pdf/{resume_id}"
+        }
+        
+    return {"success": True, "photo_url": f"/api/photo/{resume_id}"}
+
+
+@app.get("/api/photo/{resume_id}")
+async def get_photo(resume_id: str):
+    """Serves the uploaded headshot photo for preview."""
+    photos_dir = settings.STORAGE_DIR / "photos"
+    for ext in [".png", ".jpg", ".jpeg"]:
+        p = photos_dir / f"photo_{resume_id}{ext}"
+        if p.exists():
+            media = "image/jpeg" if ext in [".jpg", ".jpeg"] else "image/png"
+            return FileResponse(p, media_type=media)
+    raise HTTPException(status_code=404, detail="Photo not found")
 
 
 @app.post("/api/compile")

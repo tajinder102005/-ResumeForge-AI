@@ -29,9 +29,12 @@ import {
   CheckCircle2,
   FileText,
   Palette,
+  Camera,
+  Image as ImageIcon,
+  User,
 } from 'lucide-react';
 import { OptimizedResume } from '../types';
-import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl, getDocxDownloadUrl, compileLatex, switchTemplate } from '../services/api';
+import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl, getDocxDownloadUrl, compileLatex, switchTemplate, uploadPhoto } from '../services/api';
 
 interface ResumePreviewStepProps {
   optimized: OptimizedResume;
@@ -82,10 +85,12 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const [selectedTemplate, setSelectedTemplate] = useState<'modern' | 'classic' | 'tech'>('modern');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('modern');
   const [isSwitchingTemplate, setIsSwitchingTemplate] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  const handleTemplateSwitch = async (tpl: 'modern' | 'classic' | 'tech') => {
+  const handleTemplateSwitch = async (tpl: string) => {
     if (tpl === selectedTemplate || isSwitchingTemplate) return;
     setIsSwitchingTemplate(true);
     setCompileError(null);
@@ -100,7 +105,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
         setEditableLatex(res.latex_code);
         optimized.latex_code = res.latex_code;
         setPdfTimestamp(Date.now());
-        setCompileSuccess(`Switched to ${tpl.toUpperCase()} layout and compiled successfully!`);
+        setCompileSuccess(`Switched to ${tpl.toUpperCase().replace('_', ' ')} layout and compiled successfully!`);
         setActiveTab('preview');
       } else {
         setCompileError(res.error || 'Failed to switch template.');
@@ -109,6 +114,34 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
       setCompileError(err.message || 'Error switching template.');
     } finally {
       setIsSwitchingTemplate(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    setCompileError(null);
+    setCompileSuccess(null);
+    try {
+      const res = await uploadPhoto(optimized.resume_id, file);
+      if (res.success && res.latex_code) {
+        setSelectedTemplate('sidebar_photo');
+        setEditableLatex(res.latex_code);
+        optimized.latex_code = res.latex_code;
+        setPdfTimestamp(Date.now());
+        setCompileSuccess('Photo uploaded successfully! Recompiled with Executive Sidebar theme.');
+        setActiveTab('preview');
+      } else {
+        setCompileError(res.error || 'Failed to upload photo.');
+      }
+    } catch (err: any) {
+      setCompileError(err.message || 'Error uploading photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -352,48 +385,126 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
         </div>
       </div>
 
-      {/* Template Theme Switcher Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg">
-        <div className="flex items-center space-x-2">
+      {/* Template Theme Switcher & Headshot Upload Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
+        <div className="flex items-center space-x-2.5">
           <Palette className="w-4 h-4 text-brand-400" />
-          <span className="text-xs font-bold text-slate-200">Typography & Layout Theme:</span>
-          <span className="text-[11px] text-slate-400 hidden md:inline">Instant Tectonic re-compilation</span>
+          <div>
+            <span className="text-xs font-bold text-white block">Visual Themes & Formatting:</span>
+            <span className="text-[11px] text-slate-400">High-contrast, colorful ATS layouts & 2-column headshot</span>
+          </div>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
+          {/* Modern Minimalist */}
           <button
             onClick={() => handleTemplateSwitch('modern')}
             disabled={isSwitchingTemplate}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
               selectedTemplate === 'modern'
-                ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20 ring-1 ring-brand-400/30'
+                ? 'bg-slate-700 text-white shadow-md ring-2 ring-slate-400'
                 : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60'
             }`}
           >
-            <span>Modern Minimalist</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block shadow-sm" />
+            <span>Minimalist</span>
           </button>
 
+          {/* Golden & Onyx Luxury */}
+          <button
+            onClick={() => handleTemplateSwitch('gold')}
+            disabled={isSwitchingTemplate}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
+              selectedTemplate === 'gold' || selectedTemplate === 'golden'
+                ? 'bg-amber-950/80 text-amber-200 shadow-md ring-2 ring-amber-500 border border-amber-500/50'
+                : 'bg-slate-800/80 text-amber-300/80 hover:text-amber-200 hover:bg-amber-950/40 border border-amber-900/40'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow-sm shadow-amber-400/50" />
+            <span>Golden & Onyx</span>
+          </button>
+
+          {/* Navy Blue Banner (Rohan Malhotra Style) */}
+          <button
+            onClick={() => handleTemplateSwitch('navy')}
+            disabled={isSwitchingTemplate}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
+              selectedTemplate === 'navy' || selectedTemplate === 'navy_blue'
+                ? 'bg-blue-950/90 text-blue-200 shadow-md ring-2 ring-blue-500 border border-blue-500/50'
+                : 'bg-slate-800/80 text-blue-300/80 hover:text-blue-200 hover:bg-blue-950/40 border border-blue-900/40'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-sm shadow-blue-500/50" />
+            <span>Navy Banner</span>
+          </button>
+
+          {/* Emerald Modern */}
+          <button
+            onClick={() => handleTemplateSwitch('emerald')}
+            disabled={isSwitchingTemplate}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
+              selectedTemplate === 'emerald'
+                ? 'bg-emerald-950/90 text-emerald-200 shadow-md ring-2 ring-emerald-500 border border-emerald-500/50'
+                : 'bg-slate-800/80 text-emerald-300/80 hover:text-emerald-200 hover:bg-emerald-950/40 border border-emerald-900/40'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-400/50" />
+            <span>Emerald Modern</span>
+          </button>
+
+          {/* Classic Ivy */}
           <button
             onClick={() => handleTemplateSwitch('classic')}
             disabled={isSwitchingTemplate}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
               selectedTemplate === 'classic'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-500/20 ring-1 ring-amber-400/30'
+                ? 'bg-stone-700 text-white shadow-md ring-2 ring-stone-400'
                 : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60'
             }`}
           >
-            <span>Classic Ivy League</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-stone-300 inline-block" />
+            <span>Classic Ivy</span>
           </button>
 
+          {/* Executive 2-Column Sidebar + Photo */}
           <button
-            onClick={() => handleTemplateSwitch('tech')}
+            onClick={() => handleTemplateSwitch('sidebar_photo')}
             disabled={isSwitchingTemplate}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-              selectedTemplate === 'tech'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-1 ring-blue-400/30'
-                : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60'
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
+              selectedTemplate === 'sidebar_photo' || selectedTemplate === 'sidebar'
+                ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-400'
+                : 'bg-slate-800/80 text-indigo-300 hover:text-white hover:bg-indigo-950/60 border border-indigo-800/50'
             }`}
           >
-            <span>Tech Modern Accent</span>
+            <User className="w-3.5 h-3.5 text-indigo-300" />
+            <span>Sidebar + Photo</span>
+          </button>
+
+          {/* Upload Headshot Button */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handlePhotoUpload}
+            accept="image/png, image/jpeg, image/jpg"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingPhoto}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-md shadow-purple-500/20 flex items-center space-x-1.5 transition-all"
+            title="Upload headshot to embed directly in the resume"
+          >
+            {isUploadingPhoto ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Camera className="w-3.5 h-3.5" />
+                <span>Upload Photo</span>
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -129,6 +129,31 @@ export async function switchTemplate(params: {
   return res.json();
 }
 
+export async function uploadPhoto(resumeId: string, file: File): Promise<{
+  success: boolean;
+  photo_url?: string;
+  template_name?: string;
+  latex_code?: string;
+  pdf_url?: string;
+  error?: string;
+}> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${API_BASE}/api/photo/upload/${resumeId}`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to upload photo.');
+  }
+  return res.json();
+}
+
+export function getPhotoUrl(resume_id: string): string {
+  return `${API_BASE}/api/photo/${resume_id}`;
+}
+
 export async function fetchHistory(): Promise<any[]> {
   const res = await fetch(`${API_BASE}/api/history`);
   if (!res.ok) throw new Error('Failed to fetch history');

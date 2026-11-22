@@ -48,7 +48,8 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 RUN mkdir -p /app/backend/storage/pdfs \
              /app/backend/storage/tex \
              /app/backend/storage/docx \
-             /app/backend/storage/db
+             /app/backend/storage/db \
+             /app/backend/storage/photos
 
 EXPOSE 8000
 

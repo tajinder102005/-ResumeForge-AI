@@ -1,7 +1,12 @@
+from pathlib import Path
 from typing import Dict, List, Optional
+from backend.app.config import settings
 from backend.app.models.optimization import OptimizedResume
 from backend.app.utils.text_cleaning import escape_latex
 
+# -------------------------------------------------------------
+# 1. TEMPLATE: MODERN MINIMALIST (Clean Crisp ATS Monochrome)
+# -------------------------------------------------------------
 TEMPLATE_MODERN = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
@@ -51,6 +56,9 @@ __ACHIEVEMENTS_SECTION__
 \end{document}
 """
 
+# -------------------------------------------------------------
+# 2. TEMPLATE: CLASSIC IVY LEAGUE (Academic Serif Elegance)
+# -------------------------------------------------------------
 TEMPLATE_CLASSIC = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
@@ -100,6 +108,9 @@ __ACHIEVEMENTS_SECTION__
 \end{document}
 """
 
+# -------------------------------------------------------------
+# 3. TEMPLATE: TECH MODERN ACCENT (Crisp Sans-Serif Navy Accent)
+# -------------------------------------------------------------
 TEMPLATE_TECH = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
@@ -152,18 +163,282 @@ __ACHIEVEMENTS_SECTION__
 \end{document}
 """
 
+# -------------------------------------------------------------
+# 4. TEMPLATE: GOLDEN & ONYX LUXURY (Metallic Gold & Charcoal)
+# -------------------------------------------------------------
+TEMPLATE_GOLD = r"""\documentclass[letterpaper,10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+
+\definecolor{goldaccent}{RGB}{184, 134, 11}
+\definecolor{onyxblack}{RGB}{18, 18, 18}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\raggedright
+\raggedbottom
+\urlstyle{same}
+\linespread{1.04}
+
+% Luxury Gold & Onyx heading: gold thick rule
+\titleformat{\section}
+  {\large\bfseries\color{onyxblack}}
+  {}{0em}
+  {\uppercase}
+  [{\color{goldaccent}\titlerule[1.5pt]}]
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+
+\setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{onyxblack} __CANDIDATE_NAME__}\\[3pt]
+  {\color{goldaccent}\rule{3.8in}{1.2pt}}\\[4pt]
+  __CONTACT_LINE__
+\end{center}
+
+\vspace{-8pt}
+
+\section{Professional Summary}
+__SUMMARY__
+
+\section{Education}
+__EDUCATION_SECTION__
+
+\section{Technical Skills}
+__SKILLS_BLOCK__
+
+\section{Technical Projects}
+__PROJECTS_SECTION__
+
+__ACHIEVEMENTS_SECTION__
+
+\end{document}
+"""
+
+# -------------------------------------------------------------
+# 5. TEMPLATE: NAVY BLUE BANNER (Shaded Full-Width Section Boxes)
+# Matches Rohan Malhotra style from user screenshot
+# -------------------------------------------------------------
+TEMPLATE_NAVY = r"""\documentclass[letterpaper,10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand\familydefault{\sfdefault}
+\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage[explicit]{titlesec}
+\usepackage{xcolor}
+
+\definecolor{navyaccent}{RGB}{15, 43, 92}
+\definecolor{navybanner}{RGB}{230, 238, 248}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\raggedright
+\raggedbottom
+\urlstyle{same}
+\linespread{1.04}
+
+% Shaded full-width banner heading
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{navyaccent}}
+  {}{0em}
+  {\colorbox{navybanner}{\parbox{\dimexpr\linewidth-2\fboxsep}{\strut\uppercase{#1}}}}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+
+\setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{navyaccent} __CANDIDATE_NAME__}\\[3pt]
+  __CONTACT_LINE__
+\end{center}
+
+\vspace{-6pt}
+
+\section{Professional Summary}
+__SUMMARY__
+
+\section{Education}
+__EDUCATION_SECTION__
+
+\section{Technical Skills}
+__SKILLS_BLOCK__
+
+\section{Technical Projects}
+__PROJECTS_SECTION__
+
+__ACHIEVEMENTS_SECTION__
+
+\end{document}
+"""
+
+# -------------------------------------------------------------
+# 6. TEMPLATE: EMERALD MODERN BANNER (Deep Forest Emerald & Mint)
+# -------------------------------------------------------------
+TEMPLATE_EMERALD = r"""\documentclass[letterpaper,10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand\familydefault{\sfdefault}
+\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage[explicit]{titlesec}
+\usepackage{xcolor}
+
+\definecolor{emeraldaccent}{RGB}{13, 92, 58}
+\definecolor{emeraldbanner}{RGB}{233, 246, 239}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\raggedright
+\raggedbottom
+\urlstyle{same}
+\linespread{1.04}
+
+% Shaded emerald banner heading
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{emeraldaccent}}
+  {}{0em}
+  {\colorbox{emeraldbanner}{\parbox{\dimexpr\linewidth-2\fboxsep}{\strut\uppercase{#1}}}}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+
+\setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{emeraldaccent} __CANDIDATE_NAME__}\\[3pt]
+  __CONTACT_LINE__
+\end{center}
+
+\vspace{-6pt}
+
+\section{Professional Summary}
+__SUMMARY__
+
+\section{Education}
+__EDUCATION_SECTION__
+
+\section{Technical Skills}
+__SKILLS_BLOCK__
+
+\section{Technical Projects}
+__PROJECTS_SECTION__
+
+__ACHIEVEMENTS_SECTION__
+
+\end{document}
+"""
+
+# -------------------------------------------------------------
+# 7. TEMPLATE: SIDEBAR WITH PHOTO AVATAR (2-Column Executive)
+# Matches Michael Johnson style from user screenshot
+# -------------------------------------------------------------
+TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
+
+\usepackage[left=0in,right=0in,top=0in,bottom=0in]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{sidebg}{HTML}{1E293B}
+\definecolor{textlight}{HTML}{F8FAFC}
+\definecolor{accentgold}{HTML}{D4AF37}
+\definecolor{headingdark}{HTML}{0F172A}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\begin{minipage}[t][\paperheight]{2.5in}
+  \colorbox{sidebg}{%
+    \begin{minipage}[t][\paperheight][t]{2.3in}
+      \vspace{0.35in}
+      \centering
+      __AVATAR_BLOCK__\\[8pt]
+
+      {\color{textlight}\Large\textbf{__CANDIDATE_NAME__}}\\[3pt]
+      {\color{accentgold}\small\textbf{__TARGET_ROLE__}}\\[10pt]
+
+      \raggedright
+      \hspace{0.15in}\begin{minipage}{2.0in}
+        {\color{accentgold}\large\textbf{\uppercase{Contact}}}\\[4pt]
+        {\color{textlight}\footnotesize
+        __SIDEBAR_CONTACT__
+        }\vspace{10pt}
+
+        {\color{accentgold}\large\textbf{\uppercase{Skills}}}\\[4pt]
+        {\color{textlight}\footnotesize
+        __SIDEBAR_SKILLS__
+        }\vspace{10pt}
+
+        {\color{accentgold}\large\textbf{\uppercase{Education}}}\\[4pt]
+        {\color{textlight}\footnotesize
+        __SIDEBAR_EDUCATION__
+        }
+      \end{minipage}
+    \end{minipage}%
+  }
+\end{minipage}%
+\hfill
+\begin{minipage}[t][\paperheight]{5.7in}
+  \vspace{0.35in}
+  \begin{minipage}{5.2in}
+    {\color{headingdark}\large\textbf{\uppercase{Professional Summary}}}\\[3pt]
+    {\color{sidebg}\rule{\linewidth}{1.2pt}}\vspace{4pt}
+    \small __SUMMARY__\vspace{10pt}
+
+    {\color{headingdark}\large\textbf{\uppercase{Technical Projects}}}\\[3pt]
+    {\color{sidebg}\rule{\linewidth}{1.2pt}}\vspace{4pt}
+    __PROJECTS_SECTION__\vspace{10pt}
+
+    __ACHIEVEMENTS_SECTION__
+  \end{minipage}
+\end{minipage}
+
+\end{document}
+"""
+
 
 class LatexGenerator:
-    """Generates standard, ATS-friendly LaTeX code supporting multiple elegant themes."""
+    """Generates standard, ATS-friendly LaTeX code supporting multiple visually striking themes."""
 
     TEMPLATES = {
         "modern": TEMPLATE_MODERN,
         "classic": TEMPLATE_CLASSIC,
         "tech": TEMPLATE_TECH,
+        "gold": TEMPLATE_GOLD,
+        "golden": TEMPLATE_GOLD,
+        "navy": TEMPLATE_NAVY,
+        "navy_blue": TEMPLATE_NAVY,
+        "emerald": TEMPLATE_EMERALD,
+        "sidebar_photo": TEMPLATE_SIDEBAR_PHOTO,
+        "sidebar": TEMPLATE_SIDEBAR_PHOTO,
+        "photo": TEMPLATE_SIDEBAR_PHOTO,
     }
 
     @classmethod
-    def generate(cls, resume: OptimizedResume, template_name: str = "modern") -> str:
+    def generate(
+        cls,
+        resume: OptimizedResume,
+        template_name: str = "modern",
+        photo_filename: Optional[str] = None
+    ) -> str:
         tpl_key = template_name.lower().strip() if template_name else "modern"
         base_template = cls.TEMPLATES.get(tpl_key, TEMPLATE_MODERN)
 
@@ -172,6 +447,9 @@ class LatexGenerator:
         email_esc = escape_latex(contact.email or "tajinder.swe@gmail.com")
         phone_esc = escape_latex(contact.phone or "+91-9518671610")
         loc_esc = escape_latex(contact.location or "")
+
+        # Target role
+        target_role_esc = escape_latex(resume.job_title or "Software Engineer")
 
         # Header contact line
         links = []
@@ -191,13 +469,16 @@ class LatexGenerator:
             lc_clean = escape_latex(contact.leetcode)
             links.append(f"\\href{{{lc_clean}}}{{LeetCode}}")
 
-        sep = " $\\diamond$ " if tpl_key == "classic" else " $|$ "
+        if tpl_key in ["classic", "gold", "golden"]:
+            sep = " $\\diamond$ "
+        else:
+            sep = " $|$ "
         header_contact_line = sep.join(links)
 
         # Summary
         summary_esc = escape_latex(resume.summary.strip())
 
-        # Education
+        # Education (1-column standard)
         edu_lines = []
         for edu in resume.education:
             inst = edu.institution or "Chandigarh University, Mohali, Punjab"
@@ -218,8 +499,27 @@ class LatexGenerator:
             ]
         education_section = "\n".join(edu_lines)
 
-        # Skills Block
+        # Education (Sidebar compact)
+        sidebar_edu_lines = []
+        for edu in resume.education:
+            inst = edu.institution or "Chandigarh University"
+            deg = edu.degree or "B.E. Computer Science"
+            dates = f"{edu.start_date or '2023'} -- {edu.end_date or '2027'}"
+            gpa = f"CGPA: {edu.gpa}" if edu.gpa else "CGPA: 8.04"
+            sidebar_edu_lines.append(f"\\textbf{{{escape_latex(inst)}}}\\\\[2pt]")
+            sidebar_edu_lines.append(f"{escape_latex(deg)}\\\\[2pt]")
+            sidebar_edu_lines.append(f"{dates} \ $|$ \ {gpa}\\\\[6pt]")
+        if not sidebar_edu_lines:
+            sidebar_edu_lines = [
+                r"\textbf{Chandigarh University}\\[2pt]",
+                r"B.E. Computer Science\\[2pt]",
+                r"2023 -- 2027 \ $|$ \ CGPA: 8.04\\[6pt]"
+            ]
+        sidebar_education = "\n".join(sidebar_edu_lines)
+
+        # Skills Block (1-column standard)
         skills_lines = []
+        sidebar_skills_lines = []
         for cat, skills in resume.rebuilt_skills.items():
             if not skills:
                 continue
@@ -237,7 +537,58 @@ class LatexGenerator:
                 cat_esc = escape_latex(cat)
                 skills_str = escape_latex(", ".join(deduped))
                 skills_lines.append(f"\\textbf{{{cat_esc}:}} {skills_str}\\\\")
+                sidebar_skills_lines.append(f"\\textbf{{{cat_esc}:}}\\\\ {skills_str}\\\\[4pt]")
+
         skills_block = "\n".join(skills_lines)
+        sidebar_skills = "\n".join(sidebar_skills_lines)
+
+        # Sidebar Contact
+        sb_contacts = []
+        if email_esc:
+            sb_contacts.append(f"\\href{{mailto:{email_esc}}}{{{email_esc}}}\\\\[3pt]")
+        if phone_esc:
+            sb_contacts.append(f"{phone_esc}\\\\[3pt]")
+        if loc_esc:
+            sb_contacts.append(f"{loc_esc}\\\\[3pt]")
+        if contact.linkedin:
+            sb_contacts.append(f"\\href{{{escape_latex(contact.linkedin)}}}{{LinkedIn Profile}}\\\\[3pt]")
+        if contact.github:
+            sb_contacts.append(f"\\href{{{escape_latex(contact.github)}}}{{GitHub Profile}}\\\\[3pt]")
+        if contact.leetcode:
+            sb_contacts.append(f"\\href{{{escape_latex(contact.leetcode)}}}{{LeetCode Profile}}\\\\[3pt]")
+        sidebar_contact = "\n".join(sb_contacts)
+
+        # Avatar Block (for sidebar_photo)
+        # Check if actual photo file exists
+        tex_dir = settings.STORAGE_DIR / "tex"
+        photo_found = None
+        if photo_filename and (tex_dir / photo_filename).exists():
+            photo_found = photo_filename
+        else:
+            for ext in [".png", ".jpg", ".jpeg"]:
+                candidate = tex_dir / f"photo_{resume.resume_id}{ext}"
+                if candidate.exists():
+                    photo_found = f"photo_{resume.resume_id}{ext}"
+                    break
+
+        if photo_found:
+            avatar_block = (
+                r"\begin{tikzpicture}"
+                r"\clip (0,0) circle (1.15cm);"
+                f"\\node at (0,0) {{\\includegraphics[width=2.4cm,height=2.4cm,keepaspectratio]{{{photo_found}}}}};"
+                r"\end{tikzpicture}"
+            )
+        else:
+            # Monogram Initial circle
+            name_parts = (contact.name or "TAJINDER SINGH").split()
+            initials = "".join([p[0] for p in name_parts[:2]]).upper() if name_parts else "TS"
+            avatar_block = (
+                r"\begin{tikzpicture}"
+                r"\draw[accentgold, line width=2pt] (0,0) circle (1.15cm);"
+                r"\fill[sidebg!85!white] (0,0) circle (1.1cm);"
+                f"\\node at (0,0) {{\\color{{textlight}}\\Huge\\textbf{{{initials}}}}};"
+                r"\end{tikzpicture}"
+            )
 
         # Projects Section
         proj_blocks = []
@@ -254,7 +605,6 @@ class LatexGenerator:
                 if b_clean:
                     bullets_latex.append(f"  \\item {b_clean}")
             
-            # Prevent empty itemize block which causes LaTeX compile failure
             if not bullets_latex:
                 continue
 
@@ -279,20 +629,37 @@ class LatexGenerator:
             ]
 
         ach_bullets = "\n".join([f"  \\item {escape_latex(a)}" for a in achievements_list])
-        achieve_section = (
-            f"\\section{{Achievements}}\n"
-            f"\\begin{{itemize}}\n"
-            f"{ach_bullets}\n"
-            f"\\end{{itemize}}"
-        )
+        
+        if tpl_key in ["sidebar_photo", "sidebar", "photo"]:
+            achieve_section = (
+                f"{{\\color{{headingdark}}\\large\\textbf{{\\uppercase{{Achievements}}}}}}\\\\[3pt]\n"
+                f"{{\\color{{sidebg}}\\rule{{\\linewidth}}{{1.2pt}}}}\\vspace{{4pt}}\n"
+                f"\\begin{{itemize}}\n"
+                f"{ach_bullets}\n"
+                f"\\end{{itemize}}"
+            )
+        else:
+            achieve_section = (
+                f"\\section{{Achievements}}\n"
+                f"\\begin{{itemize}}\n"
+                f"{ach_bullets}\n"
+                f"\\end{{itemize}}"
+            )
 
         tex = base_template
         tex = tex.replace("__CANDIDATE_NAME__", candidate_name_esc)
+        tex = tex.replace("__TARGET_ROLE__", target_role_esc)
         tex = tex.replace("__CONTACT_LINE__", header_contact_line)
         tex = tex.replace("__SUMMARY__", summary_esc)
         tex = tex.replace("__EDUCATION_SECTION__", education_section)
         tex = tex.replace("__SKILLS_BLOCK__", skills_block)
         tex = tex.replace("__PROJECTS_SECTION__", projects_section)
         tex = tex.replace("__ACHIEVEMENTS_SECTION__", achieve_section)
+        
+        # Sidebar specific placeholders
+        tex = tex.replace("__AVATAR_BLOCK__", avatar_block)
+        tex = tex.replace("__SIDEBAR_CONTACT__", sidebar_contact)
+        tex = tex.replace("__SIDEBAR_SKILLS__", sidebar_skills)
+        tex = tex.replace("__SIDEBAR_EDUCATION__", sidebar_education)
 
         return tex
