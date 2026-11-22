@@ -705,9 +705,9 @@ class LatexGenerator:
             techs_esc = escape_latex(", ".join(raw_techs)) if raw_techs else ""
 
             if sub_part and techs_esc:
-                heading = f"\\textbf{{{name_esc}}} $|$ \\textit{{{sub_esc}}} \\hfill \\footnotesize\\color{{accentgreen}}\\textbf{{{techs_esc}}}"
+                heading = f"\\textbf{{{name_esc}}} $|$ \\textit{{{sub_esc}}} \\hfill \\textit{{{techs_esc}}}"
             elif techs_esc:
-                heading = f"\\textbf{{{name_esc}}} \\hfill \\footnotesize\\color{{accentgreen}}\\textbf{{{techs_esc}}}"
+                heading = f"\\textbf{{{name_esc}}} \\hfill \\textit{{{techs_esc}}}"
             elif sub_part:
                 heading = f"\\textbf{{{name_esc}}} \\hfill \\textit{{{sub_esc}}}"
             else:
