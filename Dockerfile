@@ -36,7 +36,10 @@ RUN curl -fsSL -o /tmp/tectonic.tar.gz "https://github.com/tectonic-typesetting/
     tar -xzf /tmp/tectonic.tar.gz -C /usr/local/bin/ && \
     chmod +x /usr/local/bin/tectonic && \
     rm -f /tmp/tectonic.tar.gz && \
-    /usr/local/bin/tectonic --version
+    /usr/local/bin/tectonic --version && \
+    printf '\\documentclass{article}\\usepackage{fontawesome5}\\usepackage{xcolor}\\usepackage{titlesec}\\usepackage{enumitem}\\begin{document}\\faGlobe\\end{document}\n' > /tmp/warmup.tex && \
+    /usr/local/bin/tectonic -o /tmp /tmp/warmup.tex && \
+    rm -f /tmp/warmup*
 
 # Install Python dependencies
 COPY backend/requirements.txt ./backend/

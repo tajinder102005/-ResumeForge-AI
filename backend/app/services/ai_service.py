@@ -111,6 +111,7 @@ class AIService:
             if ai_contact.get("github"): updated.github = str(ai_contact["github"]).strip()
             if ai_contact.get("leetcode"): updated.leetcode = str(ai_contact["leetcode"]).strip()
             if ai_contact.get("website"): updated.website = str(ai_contact["website"]).strip()
+            if ai_contact.get("portfolio"): updated.portfolio = str(ai_contact["portfolio"]).strip()
 
         if custom_instructions:
             ci = custom_instructions
@@ -133,6 +134,15 @@ class AIService:
             phone_m = re.search(r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}", ci)
             if phone_m and not any(k in phone_m.group(0) for k in ["http", "linkedin", "github"]):
                 updated.phone = phone_m.group(0).strip()
+
+            port_m = re.search(r"https?://(?:www\.)?[a-zA-Z0-9-]+\.(?:vercel\.app|netlify\.app|github\.io|me|dev|app|io|com)(?:/[^\s,]*)?", ci, re.I)
+            if port_m and not any(k in port_m.group(0).lower() for k in ["linkedin", "github", "leetcode"]):
+                updated.portfolio = port_m.group(0).strip()
+                updated.website = port_m.group(0).strip()
+
+        if not updated.portfolio and not updated.website:
+            updated.portfolio = "https://portfolio-website1-n47b.vercel.app/"
+            updated.website = "https://portfolio-website1-n47b.vercel.app/"
 
         return updated
 
@@ -265,6 +275,7 @@ class AIService:
                 "linkedin": resume.contact_info.linkedin,
                 "github": resume.contact_info.github,
                 "leetcode": resume.contact_info.leetcode,
+                "portfolio": resume.contact_info.portfolio or resume.contact_info.website or "https://portfolio-website1-n47b.vercel.app/",
                 "summary": resume.summary,
                 "skills": resume.skills,
                 "projects": [p.model_dump() for p in resume.projects],

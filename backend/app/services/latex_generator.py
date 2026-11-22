@@ -447,7 +447,10 @@ class LatexGenerator:
         base_template = cls.TEMPLATES.get(tpl_key, TEMPLATE_MODERN)
 
         contact = resume.contact_info
-        candidate_name_esc = escape_latex(contact.name or "Tajinder Singh")
+        raw_name = contact.name or "Tajinder Singh"
+        if raw_name.isupper():
+            raw_name = raw_name.title()
+        candidate_name_esc = escape_latex(raw_name)
         email_esc = escape_latex(contact.email or "tajinder.swe@gmail.com")
         phone_esc = escape_latex(contact.phone or "+91-9518671610")
         loc_esc = escape_latex(contact.location or "Yamuna Nagar, Haryana, India")

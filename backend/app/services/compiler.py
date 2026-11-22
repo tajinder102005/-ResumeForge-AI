@@ -173,9 +173,9 @@ class LatexCompiler:
         if contact.leetcode:
             lc_disp = contact.leetcode.replace("https://leetcode.com/u/", "").replace("https://leetcode.com/", "").rstrip("/")
             contact_parts.append(f"LeetCode: {lc_disp}")
-        if contact.website:
-            ws_disp = contact.website.replace("https://", "").replace("http://", "").rstrip("/")
-            contact_parts.append(f"Portfolio: {ws_disp}")
+        portfolio_val = contact.portfolio or contact.website or "https://portfolio-website1-n47b.vercel.app/"
+        ws_disp = portfolio_val.replace("https://", "").replace("http://", "").rstrip("/")
+        contact_parts.append(f"Portfolio: {ws_disp}")
         contact_str = " | ".join(contact_parts)
         if contact_str:
             check_page_break(16)

@@ -116,6 +116,11 @@ class ResumeExtractor:
         leetcode_match = cls.LEETCODE_REGEX.search(text)
         leetcode = leetcode_match.group(0) if leetcode_match else None
 
+        portfolio_match = re.search(r"(?:https?:\/\/)?([a-zA-Z0-9-]+\.(?:vercel\.app|netlify\.app|github\.io|me|dev|app|org|tech|io)(?:\/[^\s,]*)?)", text, re.IGNORECASE)
+        portfolio = portfolio_match.group(0) if portfolio_match else "https://portfolio-website1-n47b.vercel.app/"
+        if portfolio and not portfolio.startswith("http"):
+            portfolio = f"https://{portfolio}"
+
         # Candidate name is typically on the very first or second line
         name = "Candidate"
         for line in lines[:5]:
@@ -139,13 +144,14 @@ class ResumeExtractor:
 
         return ContactInfo(
             name=name,
-            email=email,
-            phone=phone,
-            location="",
-            linkedin=linkedin,
-            github=github,
-            leetcode=leetcode,
-            website=None,
+            email=email or "tajinder.swe@gmail.com",
+            phone=phone or "+91-9518671610",
+            location="Yamuna Nagar, Haryana, India",
+            linkedin=linkedin or "https://linkedin.com/in/tajinderasingh",
+            github=github or "https://github.com/tajinder102005",
+            leetcode=leetcode or "https://leetcode.com/u/Rednijat123/",
+            website=portfolio,
+            portfolio=portfolio,
         )
 
     @classmethod
