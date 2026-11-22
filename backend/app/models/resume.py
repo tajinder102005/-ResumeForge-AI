@@ -11,6 +11,7 @@ class ContactInfo(BaseModel):
     github: Optional[str] = None
     leetcode: Optional[str] = None
     website: Optional[str] = None
+    portfolio: Optional[str] = None
 
 
 class EducationItem(BaseModel):

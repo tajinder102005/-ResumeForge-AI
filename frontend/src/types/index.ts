@@ -7,6 +7,7 @@ export interface ContactInfo {
   github?: string | null;
   leetcode?: string | null;
   website?: string | null;
+  portfolio?: string | null;
 }
 
 export interface ExperienceItem {

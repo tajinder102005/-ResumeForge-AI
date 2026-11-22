@@ -4,6 +4,13 @@ from backend.app.config import settings
 from backend.app.models.optimization import OptimizedResume
 from backend.app.utils.text_cleaning import escape_latex
 
+# Common Preamble Snippets
+FA_COMMON = r"""\usepackage{fontawesome5}
+\definecolor{navy}{RGB}{15, 43, 92}
+\definecolor{iconblue}{RGB}{2, 111, 199}
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
+"""
+
 # -------------------------------------------------------------
 # 1. TEMPLATE: MODERN MINIMALIST (Clean Crisp ATS Monochrome)
 # -------------------------------------------------------------
@@ -11,11 +18,16 @@ TEMPLATE_MODERN = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
+\usepackage{fontawesome5}
+
+\definecolor{navy}{RGB}{20, 20, 20}
+\definecolor{iconblue}{RGB}{2, 111, 199}
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -32,12 +44,7 @@ TEMPLATE_MODERN = r"""\documentclass[letterpaper,10pt]{article}
 
 \begin{document}
 
-\begin{center}
-  {\LARGE\bfseries __CANDIDATE_NAME__}\\[3pt]
-  __CONTACT_LINE__
-\end{center}
-
-\vspace{-8pt}
+__HEADER_BLOCK__
 
 \section{Professional Summary}
 __SUMMARY__
@@ -63,11 +70,16 @@ TEMPLATE_CLASSIC = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage{times}
-\usepackage[left=0.52in,right=0.52in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[left=0.52in,right=0.52in,top=0.42in,bottom=0.42in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
+\usepackage{fontawesome5}
+
+\definecolor{navy}{RGB}{15, 43, 92}
+\definecolor{iconblue}{RGB}{15, 43, 92}
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -84,12 +96,7 @@ TEMPLATE_CLASSIC = r"""\documentclass[letterpaper,10pt]{article}
 
 \begin{document}
 
-\begin{center}
-  {\LARGE\scshape\bfseries __CANDIDATE_NAME__}\\[3pt]
-  __CONTACT_LINE__
-\end{center}
-
-\vspace{-8pt}
+__HEADER_BLOCK__
 
 \section{Professional Summary}
 __SUMMARY__
@@ -116,13 +123,17 @@ TEMPLATE_TECH = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage[scaled=0.92]{helvet}
 \renewcommand\familydefault{\sfdefault}
-\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
+\usepackage{fontawesome5}
 
 \definecolor{techblue}{RGB}{15, 60, 120}
+\definecolor{navy}{RGB}{15, 60, 120}
+\definecolor{iconblue}{RGB}{2, 111, 199}
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -139,12 +150,7 @@ TEMPLATE_TECH = r"""\documentclass[letterpaper,10pt]{article}
 
 \begin{document}
 
-\begin{center}
-  {\LARGE\bfseries\color{techblue} __CANDIDATE_NAME__}\\[3pt]
-  __CONTACT_LINE__
-\end{center}
-
-\vspace{-8pt}
+__HEADER_BLOCK__
 
 \section{Professional Summary}
 __SUMMARY__
@@ -170,14 +176,18 @@ TEMPLATE_GOLD = r"""\documentclass[letterpaper,10pt]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
+\usepackage{fontawesome5}
 
 \definecolor{goldaccent}{RGB}{184, 134, 11}
 \definecolor{onyxblack}{RGB}{18, 18, 18}
+\definecolor{navy}{RGB}{18, 18, 18}
+\definecolor{iconblue}{RGB}{184, 134, 11}
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -198,13 +208,7 @@ TEMPLATE_GOLD = r"""\documentclass[letterpaper,10pt]{article}
 
 \begin{document}
 
-\begin{center}
-  {\LARGE\bfseries\color{onyxblack} __CANDIDATE_NAME__}\\[3pt]
-  {\color{goldaccent}\rule{3.8in}{1.2pt}}\\[4pt]
-  __CONTACT_LINE__
-\end{center}
-
-\vspace{-8pt}
+__HEADER_BLOCK__
 
 \section{Professional Summary}
 __SUMMARY__
@@ -232,14 +236,18 @@ TEMPLATE_NAVY = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage[scaled=0.92]{helvet}
 \renewcommand\familydefault{\sfdefault}
-\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
 \usepackage[explicit]{titlesec}
 \usepackage{xcolor}
+\usepackage{fontawesome5}
 
 \definecolor{navyaccent}{RGB}{15, 43, 92}
 \definecolor{navybanner}{RGB}{230, 238, 248}
+\definecolor{navy}{RGB}{15, 43, 92}
+\definecolor{iconblue}{RGB}{2, 111, 199}
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -259,12 +267,7 @@ TEMPLATE_NAVY = r"""\documentclass[letterpaper,10pt]{article}
 
 \begin{document}
 
-\begin{center}
-  {\LARGE\bfseries\color{navyaccent} __CANDIDATE_NAME__}\\[3pt]
-  __CONTACT_LINE__
-\end{center}
-
-\vspace{-6pt}
+__HEADER_BLOCK__
 
 \section{Professional Summary}
 __SUMMARY__
@@ -291,14 +294,18 @@ TEMPLATE_EMERALD = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage[scaled=0.92]{helvet}
 \renewcommand\familydefault{\sfdefault}
-\usepackage[left=0.5in,right=0.5in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[left=0.5in,right=0.5in,top=0.42in,bottom=0.42in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
 \usepackage[explicit]{titlesec}
 \usepackage{xcolor}
+\usepackage{fontawesome5}
 
 \definecolor{emeraldaccent}{RGB}{13, 92, 58}
 \definecolor{emeraldbanner}{RGB}{233, 246, 239}
+\definecolor{navy}{RGB}{13, 92, 58}
+\definecolor{iconblue}{RGB}{13, 92, 58}
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -318,12 +325,7 @@ TEMPLATE_EMERALD = r"""\documentclass[letterpaper,10pt]{article}
 
 \begin{document}
 
-\begin{center}
-  {\LARGE\bfseries\color{emeraldaccent} __CANDIDATE_NAME__}\\[3pt]
-  __CONTACT_LINE__
-\end{center}
-
-\vspace{-6pt}
+__HEADER_BLOCK__
 
 \section{Professional Summary}
 __SUMMARY__
@@ -354,11 +356,13 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 \usepackage{tikz}
 \usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
+\usepackage{fontawesome5}
 
 \definecolor{sidebg}{HTML}{1E293B}
 \definecolor{textlight}{HTML}{F8FAFC}
 \definecolor{accentgold}{HTML}{D4AF37}
 \definecolor{headingdark}{HTML}{0F172A}
+\newcommand{\iconlink}[3]{{\color{accentgold}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -377,17 +381,17 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 
       \raggedright
       \hspace{0.15in}\begin{minipage}{2.0in}
-        {\color{accentgold}\large\textbf{\uppercase{Contact}}}\\[4pt]
+        {\color{accentgold}\large\textbf{\uppercase{Contact}}}\\[6pt]
         {\color{textlight}\footnotesize
         __SIDEBAR_CONTACT__
         }\vspace{10pt}
 
-        {\color{accentgold}\large\textbf{\uppercase{Skills}}}\\[4pt]
+        {\color{accentgold}\large\textbf{\uppercase{Skills}}}\\[6pt]
         {\color{textlight}\footnotesize
         __SIDEBAR_SKILLS__
         }\vspace{10pt}
 
-        {\color{accentgold}\large\textbf{\uppercase{Education}}}\\[4pt]
+        {\color{accentgold}\large\textbf{\uppercase{Education}}}\\[6pt]
         {\color{textlight}\footnotesize
         __SIDEBAR_EDUCATION__
         }
@@ -443,37 +447,43 @@ class LatexGenerator:
         base_template = cls.TEMPLATES.get(tpl_key, TEMPLATE_MODERN)
 
         contact = resume.contact_info
-        candidate_name_esc = escape_latex(contact.name or "TAJINDER SINGH")
+        candidate_name_esc = escape_latex(contact.name or "Tajinder Singh")
         email_esc = escape_latex(contact.email or "tajinder.swe@gmail.com")
         phone_esc = escape_latex(contact.phone or "+91-9518671610")
-        loc_esc = escape_latex(contact.location or "")
+        loc_esc = escape_latex(contact.location or "Yamuna Nagar, Haryana, India")
 
-        # Target role
+        linkedin_url = contact.linkedin or "https://linkedin.com/in/tajinderasingh"
+        github_url = contact.github or "https://github.com/tajinder102005"
+        leetcode_url = contact.leetcode or "https://leetcode.com/u/Rednijat123/"
+        portfolio_url = contact.portfolio or contact.website or "https://portfolio-website1-n47b.vercel.app/"
+
         target_role_esc = escape_latex(resume.job_title or "Software Engineer")
 
-        # Header contact line
-        links = []
-        if email_esc:
-            links.append(f"\\href{{mailto:{email_esc}}}{{{email_esc}}}")
-        if phone_esc:
-            links.append(f"{phone_esc}")
-        if loc_esc:
-            links.append(f"{loc_esc}")
-        if contact.linkedin:
-            li_clean = escape_latex(contact.linkedin)
-            links.append(f"\\href{{{li_clean}}}{{LinkedIn}}")
-        if contact.github:
-            gh_clean = escape_latex(contact.github)
-            links.append(f"\\href{{{gh_clean}}}{{GitHub}}")
-        if contact.leetcode:
-            lc_clean = escape_latex(contact.leetcode)
-            links.append(f"\\href{{{lc_clean}}}{{LeetCode}}")
-
-        if tpl_key in ["classic", "gold", "golden"]:
-            sep = " $\\diamond$ "
-        else:
-            sep = " $|$ "
-        header_contact_line = sep.join(links)
+        # -----------------------------------------------------------------
+        # 2-Line Header Block with FontAwesome 5 Icons & Portfolio Website
+        # Exactly matching user's requested layout:
+        # Line 1: MapMarker, Phone, Envelope
+        # Line 2: LinkedIn, GitHub, LeetCode, Globe (Portfolio)
+        # -----------------------------------------------------------------
+        header_block = (
+            "\\begin{center}\n"
+            f"    {{\\Huge\\bfseries\\color{{navy}} {candidate_name_esc}}}\\\\[7pt]\n"
+            "    \\small\n"
+            f"    {{\\color{{iconblue}}\\faMapMarker*}}\\, {loc_esc}\n"
+            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
+            f"    {{\\color{{iconblue}}\\faPhone*}}\\, {phone_esc}\n"
+            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
+            f"    \\iconlink{{\\faEnvelope}}{{mailto:{email_esc}}}{{{email_esc}}}\\\\[5pt]\n"
+            f"    \\iconlink{{\\faLinkedin}}{{{escape_latex(linkedin_url)}}}{{tajinderasingh}}\n"
+            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
+            f"    \\iconlink{{\\faGithub}}{{{escape_latex(github_url)}}}{{tajinder102005}}\n"
+            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
+            f"    \\iconlink{{\\faCode}}{{{escape_latex(leetcode_url)}}}{{Rednijat123}}\n"
+            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
+            f"    \\iconlink{{\\faGlobe}}{{{escape_latex(portfolio_url)}}}{{Portfolio}}\n"
+            "\\end{center}\n"
+            "\\vspace{-6pt}"
+        )
 
         # Summary
         summary_esc = escape_latex(resume.summary.strip())
@@ -508,12 +518,12 @@ class LatexGenerator:
             gpa = f"CGPA: {edu.gpa}" if edu.gpa else "CGPA: 8.04"
             sidebar_edu_lines.append(f"\\textbf{{{escape_latex(inst)}}}\\\\[2pt]")
             sidebar_edu_lines.append(f"{escape_latex(deg)}\\\\[2pt]")
-            sidebar_edu_lines.append(f"{dates} \ $|$ \ {gpa}\\\\[6pt]")
+            sidebar_edu_lines.append(f"{dates} $|$ {gpa}\\\\[6pt]")
         if not sidebar_edu_lines:
             sidebar_edu_lines = [
                 r"\textbf{Chandigarh University}\\[2pt]",
                 r"B.E. Computer Science\\[2pt]",
-                r"2023 -- 2027 \ $|$ \ CGPA: 8.04\\[6pt]"
+                r"2023 -- 2027 $|$ CGPA: 8.04\\[6pt]"
             ]
         sidebar_education = "\n".join(sidebar_edu_lines)
 
@@ -542,24 +552,19 @@ class LatexGenerator:
         skills_block = "\n".join(skills_lines)
         sidebar_skills = "\n".join(sidebar_skills_lines)
 
-        # Sidebar Contact
-        sb_contacts = []
-        if email_esc:
-            sb_contacts.append(f"\\href{{mailto:{email_esc}}}{{{email_esc}}}\\\\[3pt]")
-        if phone_esc:
-            sb_contacts.append(f"{phone_esc}\\\\[3pt]")
-        if loc_esc:
-            sb_contacts.append(f"{loc_esc}\\\\[3pt]")
-        if contact.linkedin:
-            sb_contacts.append(f"\\href{{{escape_latex(contact.linkedin)}}}{{LinkedIn Profile}}\\\\[3pt]")
-        if contact.github:
-            sb_contacts.append(f"\\href{{{escape_latex(contact.github)}}}{{GitHub Profile}}\\\\[3pt]")
-        if contact.leetcode:
-            sb_contacts.append(f"\\href{{{escape_latex(contact.leetcode)}}}{{LeetCode Profile}}\\\\[3pt]")
+        # Sidebar Contact Block with FontAwesome Icons
+        sb_contacts = [
+            f"{{\\color{{accentgold}}\\faMapMarker*}}\\, {loc_esc}\\\\[4pt]",
+            f"{{\\color{{accentgold}}\\faPhone*}}\\, {phone_esc}\\\\[4pt]",
+            f"{{\\color{{accentgold}}\\faEnvelope}}\\, \\href{{mailto:{email_esc}}}{{{email_esc}}}\\\\[4pt]",
+            f"{{\\color{{accentgold}}\\faLinkedin}}\\, \\href{{{escape_latex(linkedin_url)}}}{{LinkedIn Profile}}\\\\[4pt]",
+            f"{{\\color{{accentgold}}\\faGithub}}\\, \\href{{{escape_latex(github_url)}}}{{GitHub Profile}}\\\\[4pt]",
+            f"{{\\color{{accentgold}}\\faCode}}\\, \\href{{{escape_latex(leetcode_url)}}}{{LeetCode Profile}}\\\\[4pt]",
+            f"{{\\color{{accentgold}}\\faGlobe}}\\, \\href{{{escape_latex(portfolio_url)}}}{{Portfolio Website}}\\\\[4pt]",
+        ]
         sidebar_contact = "\n".join(sb_contacts)
 
         # Avatar Block (for sidebar_photo)
-        # Check if actual photo file exists (use absolute posix path for rock-solid XeTeX loading)
         tex_dir = settings.STORAGE_DIR / "tex"
         photos_dir = settings.STORAGE_DIR / "photos"
         photo_found = None
@@ -589,7 +594,6 @@ class LatexGenerator:
                 r"\end{tikzpicture}"
             )
         else:
-            # Monogram Initial circle
             name_parts = (contact.name or "TAJINDER SINGH").split()
             initials = "".join([p[0] for p in name_parts[:2]]).upper() if name_parts else "TS"
             avatar_block = (
@@ -657,9 +661,9 @@ class LatexGenerator:
             )
 
         tex = base_template
+        tex = tex.replace("__HEADER_BLOCK__", header_block)
         tex = tex.replace("__CANDIDATE_NAME__", candidate_name_esc)
         tex = tex.replace("__TARGET_ROLE__", target_role_esc)
-        tex = tex.replace("__CONTACT_LINE__", header_contact_line)
         tex = tex.replace("__SUMMARY__", summary_esc)
         tex = tex.replace("__EDUCATION_SECTION__", education_section)
         tex = tex.replace("__SKILLS_BLOCK__", skills_block)

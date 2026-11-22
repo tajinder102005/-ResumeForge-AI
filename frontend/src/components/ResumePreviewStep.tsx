@@ -32,6 +32,7 @@ import {
   Camera,
   Image as ImageIcon,
   User,
+  Globe,
 } from 'lucide-react';
 import { OptimizedResume } from '../types';
 import { getPdfDownloadUrl, getPdfViewUrl, getTexDownloadUrl, getDocxDownloadUrl, compileLatex, switchTemplate, uploadPhoto } from '../services/api';
@@ -250,6 +251,15 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                 <span>LeetCode</span>
               </a>
             )}
+            <a
+              href={contact.portfolio || contact.website || 'https://portfolio-website1-n47b.vercel.app/'}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-teal-950/40 text-teal-300 border border-teal-800/50 hover:bg-teal-900/40 transition-colors"
+            >
+              <Globe className="w-3 h-3 text-teal-400" />
+              <span>Portfolio</span>
+            </a>
           </div>
         </div>
 

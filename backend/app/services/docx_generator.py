@@ -59,6 +59,7 @@ class DocxGenerator:
         if contact.linkedin: contact_parts.append("LinkedIn")
         if contact.github: contact_parts.append("GitHub")
         if contact.leetcode: contact_parts.append("LeetCode")
+        contact_parts.append("Portfolio")
 
         p_contact = doc.add_paragraph()
         p_contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
