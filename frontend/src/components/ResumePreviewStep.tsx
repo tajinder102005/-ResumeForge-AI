@@ -476,18 +476,18 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
             <span>Classic Ivy</span>
           </button>
 
-          {/* Executive 2-Column Sidebar + Photo */}
+          {/* Executive Square Photo Theme (Image 4 Style) */}
           <button
             onClick={() => handleTemplateSwitch('sidebar_photo')}
             disabled={isSwitchingTemplate}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${
-              selectedTemplate === 'sidebar_photo' || selectedTemplate === 'sidebar'
+              selectedTemplate === 'sidebar_photo' || selectedTemplate === 'sidebar' || selectedTemplate === 'photo'
                 ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-400'
                 : 'bg-slate-800/80 text-indigo-300 hover:text-white hover:bg-indigo-950/60 border border-indigo-800/50'
             }`}
           >
             <User className="w-3.5 h-3.5 text-indigo-300" />
-            <span>Sidebar + Photo</span>
+            <span>Square Photo Theme</span>
           </button>
 
           {/* Upload Headshot Button */}

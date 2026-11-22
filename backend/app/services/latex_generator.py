@@ -348,72 +348,95 @@ __ACHIEVEMENTS_SECTION__
 # 7. TEMPLATE: SIDEBAR WITH PHOTO AVATAR (2-Column Executive)
 # Matches Michael Johnson style from user screenshot
 # -------------------------------------------------------------
+# 7. TEMPLATE: EXECUTIVE SQUARE PHOTO (Clean Modern Banner with Square Headshot)
+# Matches Catherine Bale style from user screenshot (Image 4)
+# -------------------------------------------------------------
 TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
 
-\usepackage[left=0in,right=0in,top=0in,bottom=0in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[left=0.55in,right=0.55in,top=0.42in,bottom=0.42in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{tikz}
-\usepackage{enumitem}
-\usepackage[hidelinks]{hyperref}
 \usepackage{fontawesome5}
 
-\definecolor{sidebg}{HTML}{1E293B}
-\definecolor{textlight}{HTML}{F8FAFC}
-\definecolor{accentgold}{HTML}{D4AF37}
-\definecolor{headingdark}{HTML}{0F172A}
-\newcommand{\iconlink}[3]{{\color{accentgold}#1}\,\href{#2}{#3}}
+\definecolor{headerdark}{RGB}{20, 25, 35}
+\definecolor{accentgreen}{RGB}{35, 95, 65}
+\definecolor{accentstrip}{RGB}{35, 95, 65}
+\definecolor{lightgray}{RGB}{210, 218, 226}
+\definecolor{iconblue}{RGB}{2, 111, 199}
+\definecolor{slate}{RGB}{100, 115, 130}
+
+\newcommand{\iconlink}[3]{{\color{iconblue}#1}\,\href{#2}{#3}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
+\raggedright
+\raggedbottom
+\urlstyle{same}
+\linespread{1.04}
+
+% Clean modern section heading with rule
+\titleformat{\section}{\large\bfseries\color{headerdark}}{}{0em}{}[\color{headerdark}\titlerule]
+\titlespacing*{\section}{0pt}{7pt}{3pt}
+
+\setlist[itemize]{leftmargin=0.18in, itemsep=1.5pt, parsep=0pt, topsep=2pt}
 
 \begin{document}
 
-\begin{minipage}[t][\paperheight]{2.5in}
-  \colorbox{sidebg}{%
-    \begin{minipage}[t][\paperheight][t]{2.3in}
-      \vspace{0.35in}
-      \centering
-      __AVATAR_BLOCK__\\[8pt]
+% Left accent vertical strip (Catherine Bale style)
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[accentstrip] (current page.north west) rectangle ([xshift=0.18in]current page.south west);
+\end{tikzpicture}
 
-      {\color{textlight}\Large\textbf{__CANDIDATE_NAME__}}\\[3pt]
-      {\color{accentgold}\small\textbf{__TARGET_ROLE__}}\\[10pt]
-
-      \raggedright
-      \hspace{0.15in}\begin{minipage}{2.0in}
-        {\color{accentgold}\large\textbf{\uppercase{Contact}}}\\[6pt]
-        {\color{textlight}\footnotesize
-        __SIDEBAR_CONTACT__
-        }\vspace{10pt}
-
-        {\color{accentgold}\large\textbf{\uppercase{Skills}}}\\[6pt]
-        {\color{textlight}\footnotesize
-        __SIDEBAR_SKILLS__
-        }\vspace{10pt}
-
-        {\color{accentgold}\large\textbf{\uppercase{Education}}}\\[6pt]
-        {\color{textlight}\footnotesize
-        __SIDEBAR_EDUCATION__
-        }
-      \end{minipage}
-    \end{minipage}%
-  }
+% Header: Candidate Details on Left, Square Photo on Right
+\noindent
+\begin{minipage}[t]{0.74\linewidth}
+  \vspace{0pt}
+  {\Huge\bfseries\color{headerdark} __CANDIDATE_NAME__}\\[3pt]
+  {\large\itshape\color{accentgreen} __TARGET_ROLE__}\\[6pt]
+  \small
+  {\color{iconblue}\faMapMarker*}\, __LOCATION__
+  \quad{\color{iconblue}\textbar}\quad
+  {\color{iconblue}\faPhone*}\, __PHONE__
+  \quad{\color{iconblue}\textbar}\quad
+  \iconlink{\faEnvelope}{mailto:__EMAIL__}{__EMAIL__}\\[4pt]
+  \iconlink{\faLinkedin}{__LINKEDIN_URL__}{tajinderasingh}
+  \quad{\color{iconblue}\textbar}\quad
+  \iconlink{\faGithub}{__GITHUB_URL__}{tajinder102005}
+  \quad{\color{iconblue}\textbar}\quad
+  \iconlink{\faCode}{__LEETCODE_URL__}{Rednijat123}
+  \quad{\color{iconblue}\textbar}\quad
+  \iconlink{\faGlobe}{__PORTFOLIO_URL__}{Portfolio}
 \end{minipage}%
 \hfill
-\begin{minipage}[t][\paperheight]{5.7in}
-  \vspace{0.35in}
-  \begin{minipage}{5.2in}
-    {\color{headingdark}\large\textbf{\uppercase{Professional Summary}}}\\[3pt]
-    {\color{sidebg}\rule{\linewidth}{1.2pt}}\vspace{4pt}
-    \small __SUMMARY__\vspace{10pt}
-
-    {\color{headingdark}\large\textbf{\uppercase{Technical Projects}}}\\[3pt]
-    {\color{sidebg}\rule{\linewidth}{1.2pt}}\vspace{4pt}
-    __PROJECTS_SECTION__\vspace{10pt}
-
-    __ACHIEVEMENTS_SECTION__
-  \end{minipage}
+\begin{minipage}[t]{0.23\linewidth}
+  \vspace{0pt}
+  \raggedleft
+  __AVATAR_BLOCK__
 \end{minipage}
+
+\vspace{6pt}
+\hrule height 0.6pt
+\vspace{4pt}
+
+\section{Profile}
+__SUMMARY__
+
+\section{Education}
+__EDUCATION_SECTION__
+
+\section{Technical Skills}
+__SKILLS_BLOCK__
+
+\section{Technical Projects}
+__PROJECTS_SECTION__
+
+__ACHIEVEMENTS_SECTION__
 
 \end{document}
 """
@@ -434,6 +457,8 @@ class LatexGenerator:
         "sidebar_photo": TEMPLATE_SIDEBAR_PHOTO,
         "sidebar": TEMPLATE_SIDEBAR_PHOTO,
         "photo": TEMPLATE_SIDEBAR_PHOTO,
+        "executive_photo": TEMPLATE_SIDEBAR_PHOTO,
+        "square_photo": TEMPLATE_SIDEBAR_PHOTO,
     }
 
     @classmethod
@@ -592,18 +617,16 @@ class LatexGenerator:
         if photo_found:
             avatar_block = (
                 r"\begin{tikzpicture}"
-                r"\clip (0,0) circle (1.15cm);"
-                f"\\node at (0,0) {{\\includegraphics[width=2.4cm,height=2.4cm,keepaspectratio]{{{photo_found}}}}};"
+                r"\draw[lightgray, line width=0.8pt, rounded corners=3pt] (-0.02in,-0.02in) rectangle (1.27in, 1.27in);"
+                r"\clip[rounded corners=2pt] (0,0) rectangle (1.25in, 1.25in);"
+                f"\\node[anchor=south west, inner sep=0pt] at (0,0) {{\\includegraphics[width=1.25in,height=1.25in]{{{photo_found}}}}};"
                 r"\end{tikzpicture}"
             )
         else:
-            name_parts = (contact.name or "TAJINDER SINGH").split()
-            initials = "".join([p[0] for p in name_parts[:2]]).upper() if name_parts else "TS"
             avatar_block = (
                 r"\begin{tikzpicture}"
-                r"\draw[accentgold, line width=2pt] (0,0) circle (1.15cm);"
-                r"\fill[sidebg!85!white] (0,0) circle (1.1cm);"
-                f"\\node at (0,0) {{\\color{{textlight}}\\Huge\\textbf{{{initials}}}}};"
+                r"\draw[lightgray, fill=slate!8, line width=0.8pt, rounded corners=2pt] (0,0) rectangle (1.25in, 1.25in);"
+                r"\node at (0.625in, 0.625in) {\color{accentgreen}\Huge\faUser};"
                 r"\end{tikzpicture}"
             )
 
@@ -647,34 +670,32 @@ class LatexGenerator:
 
         ach_bullets = "\n".join([f"  \\item {escape_latex(a)}" for a in achievements_list])
         
-        if tpl_key in ["sidebar_photo", "sidebar", "photo"]:
-            achieve_section = (
-                f"{{\\color{{headingdark}}\\large\\textbf{{\\uppercase{{Achievements}}}}}}\\\\[3pt]\n"
-                f"{{\\color{{sidebg}}\\rule{{\\linewidth}}{{1.2pt}}}}\\vspace{{4pt}}\n"
-                f"\\begin{{itemize}}\n"
-                f"{ach_bullets}\n"
-                f"\\end{{itemize}}"
-            )
-        else:
-            achieve_section = (
-                f"\\section{{Achievements}}\n"
-                f"\\begin{{itemize}}\n"
-                f"{ach_bullets}\n"
-                f"\\end{{itemize}}"
-            )
+        achieve_section = (
+            f"\\section{{Achievements}}\n"
+            f"\\begin{{itemize}}\n"
+            f"{ach_bullets}\n"
+            f"\\end{{itemize}}"
+        )
 
         tex = base_template
         tex = tex.replace("__HEADER_BLOCK__", header_block)
         tex = tex.replace("__CANDIDATE_NAME__", candidate_name_esc)
         tex = tex.replace("__TARGET_ROLE__", target_role_esc)
+        tex = tex.replace("__LOCATION__", loc_esc)
+        tex = tex.replace("__PHONE__", phone_esc)
+        tex = tex.replace("__EMAIL__", email_esc)
+        tex = tex.replace("__LINKEDIN_URL__", escape_latex(linkedin_url))
+        tex = tex.replace("__GITHUB_URL__", escape_latex(github_url))
+        tex = tex.replace("__LEETCODE_URL__", escape_latex(leetcode_url))
+        tex = tex.replace("__PORTFOLIO_URL__", escape_latex(portfolio_url))
+        tex = tex.replace("__AVATAR_BLOCK__", avatar_block)
         tex = tex.replace("__SUMMARY__", summary_esc)
         tex = tex.replace("__EDUCATION_SECTION__", education_section)
         tex = tex.replace("__SKILLS_BLOCK__", skills_block)
         tex = tex.replace("__PROJECTS_SECTION__", projects_section)
         tex = tex.replace("__ACHIEVEMENTS_SECTION__", achieve_section)
         
-        # Sidebar specific placeholders
-        tex = tex.replace("__AVATAR_BLOCK__", avatar_block)
+        # Legacy sidebar placeholders (if any)
         tex = tex.replace("__SIDEBAR_CONTACT__", sidebar_contact)
         tex = tex.replace("__SIDEBAR_SKILLS__", sidebar_skills)
         tex = tex.replace("__SIDEBAR_EDUCATION__", sidebar_education)

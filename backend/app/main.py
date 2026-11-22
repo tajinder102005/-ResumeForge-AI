@@ -1,3 +1,4 @@
+import io
 import logging
 import shutil
 from pathlib import Path
@@ -216,24 +217,38 @@ def switch_template(req: TemplateSwitchRequest):
 @app.post("/api/photo/upload/{resume_id}")
 async def upload_photo(resume_id: str, file: UploadFile = File(...)):
     """
-    Uploads candidate headshot photo, saves to storage/photos/,
-    and recompiles the resume with the sidebar_photo theme.
+    Uploads candidate headshot photo, automatically auto-orients EXIF,
+    center-crops to a crisp 1:1 square, resizes to 600x600, saves to storage/photos/,
+    and recompiles the resume with the square executive photo theme.
     """
     photos_dir = settings.STORAGE_DIR / "photos"
     photos_dir.mkdir(parents=True, exist_ok=True)
-    
-    ext = Path(file.filename or "photo.png").suffix.lower()
-    if ext not in [".png", ".jpg", ".jpeg"]:
-        ext = ".png"
-    photo_filename = f"photo_{resume_id}{ext}"
-    photo_path = photos_dir / photo_filename
-    
-    with open(photo_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
     tex_dir = settings.STORAGE_DIR / "tex"
     tex_dir.mkdir(parents=True, exist_ok=True)
+    
+    photo_filename = f"photo_{resume_id}.png"
+    photo_path = photos_dir / photo_filename
     tex_photo = tex_dir / photo_filename
+    
+    contents = await file.read()
+    try:
+        from PIL import Image, ImageOps
+        with Image.open(io.BytesIO(contents)) as img:
+            img = ImageOps.exif_transpose(img)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            w, h = img.size
+            min_dim = min(w, h)
+            left = (w - min_dim) // 2
+            top = (h - min_dim) // 2
+            cropped = img.crop((left, top, left + min_dim, top + min_dim))
+            resized = cropped.resize((600, 600), Image.Resampling.LANCZOS)
+            resized.save(photo_path, "PNG", quality=95)
+    except Exception as e:
+        logger.warning(f"PIL photo processing fallback: {e}")
+        with open(photo_path, "wb") as buffer:
+            buffer.write(contents)
+
     shutil.copyfile(photo_path, tex_photo)
     
     optimized = OPTIMIZED_RESUME_STORE.get(resume_id) or DatabaseService.get_optimized_resume(resume_id)
