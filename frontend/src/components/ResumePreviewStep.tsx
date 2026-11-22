@@ -509,6 +509,24 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
         </div>
       </div>
 
+      {/* Status Feedback Banners */}
+      {compileError && (
+        <div className="mb-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start space-x-2">
+          <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <strong className="block font-semibold">Compiler / Template Message:</strong>
+            <pre className="mt-1 whitespace-pre-wrap font-mono text-[11px] text-rose-200">{compileError}</pre>
+          </div>
+        </div>
+      )}
+
+      {compileSuccess && (
+        <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span>{compileSuccess}</span>
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3 mb-6">
         <button

@@ -20,23 +20,23 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies (universal packages without fragile versioned names)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     tar \
     fontconfig \
+    libfontconfig1 \
+    libgraphite2-3 \
+    libharfbuzz0b \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install pre-built Tectonic binary for Linux x86_64
-RUN curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh && \
-    mv tectonic /usr/local/bin/tectonic && \
-    chmod +x /usr/local/bin/tectonic
-
-# Pre-warm Tectonic cache so all LaTeX packages, fonts, and TikZ engines are pre-downloaded during docker build
-RUN python3 -c "tex = r'''\documentclass{article}\usepackage{geometry,xcolor,graphicx,tikz,enumitem,hyperref,lmodern,helvet}\usepackage[explicit]{titlesec}\begin{document}Warmup\end{document}'''; open('/tmp/warmup.tex', 'w').write(tex)" && \
-    tectonic /tmp/warmup.tex && \
-    rm -f /tmp/warmup.*
+# Download and install statically-linked Tectonic (zero shared library dependencies)
+RUN curl -fsSL -o /tmp/tectonic.tar.gz "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/tectonic-0.17.0-x86_64-unknown-linux-musl.tar.gz" && \
+    tar -xzf /tmp/tectonic.tar.gz -C /usr/local/bin/ && \
+    chmod +x /usr/local/bin/tectonic && \
+    rm -f /tmp/tectonic.tar.gz && \
+    /usr/local/bin/tectonic --version
 
 # Install Python dependencies
 COPY backend/requirements.txt ./backend/
