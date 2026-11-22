@@ -86,7 +86,7 @@ def system_status():
         "tectonic_available": tectonic_bin is not None,
         "tectonic_path": tectonic_bin,
         "database_storage": "SQLite Persistent (backend/storage/db/resumeforge.db)",
-        "available_templates": ["modern", "classic", "tech"],
+        "available_templates": ["modern", "classic", "tech", "gold", "navy", "emerald", "sidebar_photo"],
         "export_formats": ["pdf", "tex", "docx"],
     }
 
