@@ -33,6 +33,11 @@ RUN curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | s
     mv tectonic /usr/local/bin/tectonic && \
     chmod +x /usr/local/bin/tectonic
 
+# Pre-warm Tectonic cache so all LaTeX packages, fonts, and TikZ engines are pre-downloaded during docker build
+RUN python3 -c "tex = r'''\documentclass{article}\usepackage{geometry,xcolor,graphicx,tikz,enumitem,hyperref,lmodern,helvet}\usepackage[explicit]{titlesec}\begin{document}Warmup\end{document}'''; open('/tmp/warmup.tex', 'w').write(tex)" && \
+    tectonic /tmp/warmup.tex && \
+    rm -f /tmp/warmup.*
+
 # Install Python dependencies
 COPY backend/requirements.txt ./backend/
 RUN pip install --no-cache-dir --upgrade pip && \

@@ -559,16 +559,26 @@ class LatexGenerator:
         sidebar_contact = "\n".join(sb_contacts)
 
         # Avatar Block (for sidebar_photo)
-        # Check if actual photo file exists
+        # Check if actual photo file exists (use absolute posix path for rock-solid XeTeX loading)
         tex_dir = settings.STORAGE_DIR / "tex"
+        photos_dir = settings.STORAGE_DIR / "photos"
         photo_found = None
-        if photo_filename and (tex_dir / photo_filename).exists():
-            photo_found = photo_filename
-        else:
+
+        if photo_filename:
+            for d in [tex_dir, photos_dir]:
+                p = d / photo_filename
+                if p.exists():
+                    photo_found = p.resolve().as_posix()
+                    break
+
+        if not photo_found:
             for ext in [".png", ".jpg", ".jpeg"]:
-                candidate = tex_dir / f"photo_{resume.resume_id}{ext}"
-                if candidate.exists():
-                    photo_found = f"photo_{resume.resume_id}{ext}"
+                for d in [tex_dir, photos_dir]:
+                    candidate = d / f"photo_{resume.resume_id}{ext}"
+                    if candidate.exists():
+                        photo_found = candidate.resolve().as_posix()
+                        break
+                if photo_found:
                     break
 
         if photo_found:

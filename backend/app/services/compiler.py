@@ -68,10 +68,11 @@ class LatexCompiler:
             try:
                 res = subprocess.run(
                     cmd,
+                    cwd=str(tex_dir),
                     stdin=subprocess.DEVNULL,
                     capture_output=True,
                     text=True,
-                    timeout=20,
+                    timeout=60,
                     check=False
                 )
                 if res.returncode == 0 and pdf_path.exists():
@@ -93,22 +94,10 @@ class LatexCompiler:
                 "validation": validation,
             }
 
-        # Fallback: Render ATS-Compliant PDF using PyMuPDF direct engine
-        if optimized_resume:
-            cls.render_direct_ats_pdf(optimized_resume, pdf_path)
-            validation = cls.validate_pdf(pdf_path)
-            return {
-                "success": True,
-                "engine": "ATS Direct Engine (LaTeX .tex generated)",
-                "error": None,
-                "tex_path": str(tex_path),
-                "pdf_path": str(pdf_path),
-                "validation": validation,
-            }
-
+        # If Tectonic failed, log and report error without blindly overwriting with plain monochrome fallback
         return {
             "success": False,
-            "error": f"Compilation failed: {error_msg or 'Unknown compiler error'}",
+            "error": f"Tectonic Compilation Failed: {error_msg or 'Unknown compiler error'}",
             "tex_path": str(tex_path),
             "pdf_path": None,
             "validation": None
