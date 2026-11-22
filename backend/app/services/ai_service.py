@@ -103,15 +103,32 @@ class AIService:
     ) -> ContactInfo:
         updated = original.model_copy()
 
+        TECH_JUNK_URLS = ["socket.io", "express", "react", "spring", "kafka", "mongodb", "docker", "postman", "supabase", "node"]
+
+        def is_valid_portfolio(url: Optional[str]) -> bool:
+            if not url or not isinstance(url, str):
+                return False
+            u_low = url.lower()
+            if any(junk in u_low for junk in TECH_JUNK_URLS):
+                return False
+            if any(domain in u_low for domain in ["linkedin.com", "github.com", "leetcode.com"]):
+                return False
+            return True
+
         if ai_contact and isinstance(ai_contact, dict):
             if ai_contact.get("email"): updated.email = str(ai_contact["email"]).strip()
             if ai_contact.get("phone"): updated.phone = str(ai_contact["phone"]).strip()
             if ai_contact.get("location"): updated.location = str(ai_contact["location"]).strip()
-            if ai_contact.get("linkedin"): updated.linkedin = str(ai_contact["linkedin"]).strip()
-            if ai_contact.get("github"): updated.github = str(ai_contact["github"]).strip()
-            if ai_contact.get("leetcode"): updated.leetcode = str(ai_contact["leetcode"]).strip()
-            if ai_contact.get("website"): updated.website = str(ai_contact["website"]).strip()
-            if ai_contact.get("portfolio"): updated.portfolio = str(ai_contact["portfolio"]).strip()
+            if ai_contact.get("linkedin") and "linkedin.com" in str(ai_contact["linkedin"]).lower():
+                updated.linkedin = str(ai_contact["linkedin"]).strip()
+            if ai_contact.get("github") and "github.com" in str(ai_contact["github"]).lower():
+                updated.github = str(ai_contact["github"]).strip()
+            if ai_contact.get("leetcode") and "leetcode.com" in str(ai_contact["leetcode"]).lower():
+                updated.leetcode = str(ai_contact["leetcode"]).strip()
+            if ai_contact.get("portfolio") and is_valid_portfolio(str(ai_contact["portfolio"])):
+                updated.portfolio = str(ai_contact["portfolio"]).strip()
+            if ai_contact.get("website") and is_valid_portfolio(str(ai_contact["website"])):
+                updated.website = str(ai_contact["website"]).strip()
 
         if custom_instructions:
             ci = custom_instructions
@@ -135,14 +152,19 @@ class AIService:
             if phone_m and not any(k in phone_m.group(0) for k in ["http", "linkedin", "github"]):
                 updated.phone = phone_m.group(0).strip()
 
-            port_m = re.search(r"https?://(?:www\.)?[a-zA-Z0-9-]+\.(?:vercel\.app|netlify\.app|github\.io|me|dev|app|io|com)(?:/[^\s,]*)?", ci, re.I)
-            if port_m and not any(k in port_m.group(0).lower() for k in ["linkedin", "github", "leetcode"]):
+            port_m = re.search(r"https?://(?:www\.)?[a-zA-Z0-9-]+\.(?:vercel\.app|netlify\.app|github\.io|me|dev|app|org|com)(?:/[^\s,]*)?", ci, re.I)
+            if port_m and is_valid_portfolio(port_m.group(0)):
                 updated.portfolio = port_m.group(0).strip()
                 updated.website = port_m.group(0).strip()
 
-        if not updated.portfolio and not updated.website:
-            updated.portfolio = "https://portfolio-website1-n47b.vercel.app/"
-            updated.website = "https://portfolio-website1-n47b.vercel.app/"
+        if not is_valid_portfolio(updated.portfolio):
+            if is_valid_portfolio(updated.website):
+                updated.portfolio = updated.website
+            else:
+                updated.portfolio = "https://portfolio-website1-n47b.vercel.app/"
+
+        if not is_valid_portfolio(updated.website):
+            updated.website = updated.portfolio
 
         return updated
 
@@ -294,11 +316,12 @@ class AIService:
             "1. LENGTH: Exactly ONE page. Zero overflow.\n"
             "2. SECTION ORDER: Header -> Professional Summary -> Education -> Technical Skills -> Technical Projects -> Achievements.\n"
             "3. ZERO FABRICATION: Do NOT invent metrics, percentages (like 30% or 40%), fake user counts (like 5k+ concurrent users), or transaction numbers (like 10k+ daily transactions). Only use verifiable, truthful achievements from the candidate's actual resume.\n"
-            "4. SUMMARY: Exactly 2 technical sentences targeted at the role and company. Mention strong OOP, distributed systems, and 1000+ DSA problems solved.\n"
-            "5. EDUCATION: Chandigarh University, Mohali, Punjab — B.E. in Computer Science & Engineering | 2023 - 2027 | CGPA: 8.04. Coursework: Data Structures & Algorithms, OOP, Operating Systems, DBMS, Computer Networks.\n"
-            "6. TECHNICAL SKILLS: Categorize into Programming Languages, Frameworks & Libraries, Databases & Storage, Cloud & DevOps, Backend & Distributed Systems. CRITICAL: Each category must be a JSON array of strings (e.g. [\"Java\", \"Spring Boot\"]), NEVER a single comma-separated string. Prioritize skills matching the target role.\n"
-            "7. PROJECTS: Exactly 3 bullets for JobFlow and FinTrack; exactly 2 bullets for Real-Time Chat App. Provide each bullet as a string inside 'bullet_points' array. Format: Strong action verb + what was built + tech + truthful outcome. Never return empty bullet_points.\n"
-            "8. ACHIEVEMENTS: Include a JSON array of 3-4 strings (LeetCode 1000+ DSA problems, 500 Days Badge, NPTEL Cloud Computing Silver, hackathons).\n"
+            "4. CONTACT INFO: STRICTLY PRESERVE candidate's exact contact info: Name: Tajinder Singh, Email: tajinder.swe@gmail.com, Phone: +91-9518671610, Location: Yamuna Nagar, Haryana, India, LinkedIn: https://linkedin.com/in/tajinderasingh, GitHub: https://github.com/tajinder102005, LeetCode: https://leetcode.com/u/Rednijat123/, Portfolio: https://portfolio-website1-n47b.vercel.app/. NEVER replace the portfolio link with programming libraries like Socket.IO or Express.\n"
+            "5. SUMMARY: Exactly 2 technical sentences targeted at the role and company. Mention strong OOP, distributed systems, and 1000+ DSA problems solved.\n"
+            "6. EDUCATION: Chandigarh University, Mohali, Punjab — B.E. in Computer Science & Engineering | 2023 - 2027 | CGPA: 8.04. Coursework: Data Structures & Algorithms, OOP, Operating Systems, DBMS, Computer Networks.\n"
+            "7. TECHNICAL SKILLS: Categorize into Programming Languages, Frameworks & Libraries, Databases & Storage, Cloud & DevOps, Backend & Distributed Systems. CRITICAL: Each category must be a JSON array of strings (e.g. [\"Java\", \"Spring Boot\"]), NEVER a single comma-separated string. Prioritize skills matching the target role.\n"
+            "8. PROJECTS: Exactly 3 bullets for JobFlow and FinTrack; exactly 2 bullets for Real-Time Chat App. Provide each bullet as a string inside 'bullet_points' array. Format: Strong action verb + what was built + tech + truthful outcome. Never return empty bullet_points.\n"
+            "9. ACHIEVEMENTS: Include a JSON array of 3-4 strings (LeetCode 1000+ DSA problems, 500 Days Badge, NPTEL Cloud Computing Silver, hackathons).\n"
             "Output strictly valid JSON with keys: contact_info, summary, rebuilt_skills, projects, education, achievements, recommended_project_enhancements, ats_report.\n\n"
             f"{json.dumps(user_content)}"
         )

@@ -480,10 +480,16 @@ class LatexGenerator:
         phone_esc = escape_latex(contact.phone or "+91-9518671610")
         loc_esc = escape_latex(contact.location or "Yamuna Nagar, Haryana, India")
 
-        linkedin_url = contact.linkedin or "https://linkedin.com/in/tajinderasingh"
-        github_url = contact.github or "https://github.com/tajinder102005"
-        leetcode_url = contact.leetcode or "https://leetcode.com/u/Rednijat123/"
-        portfolio_url = contact.portfolio or contact.website or "https://portfolio-website1-n47b.vercel.app/"
+        linkedin_url = contact.linkedin if (contact.linkedin and "linkedin.com" in contact.linkedin.lower()) else "https://linkedin.com/in/tajinderasingh"
+        github_url = contact.github if (contact.github and "github.com" in contact.github.lower()) else "https://github.com/tajinder102005"
+        leetcode_url = contact.leetcode if (contact.leetcode and "leetcode.com" in contact.leetcode.lower()) else "https://leetcode.com/u/Rednijat123/"
+        
+        raw_portfolio = contact.portfolio or contact.website or ""
+        # Guard against LLM hallucinating tech library names (e.g. Socket.IO) as portfolio
+        if not raw_portfolio or any(junk in raw_portfolio.lower() for junk in ["socket.io", "express", "react", "spring", "kafka", "mongodb", "node", "supabase"]):
+            portfolio_url = "https://portfolio-website1-n47b.vercel.app/"
+        else:
+            portfolio_url = raw_portfolio
 
         target_role_esc = escape_latex(resume.job_title or "Software Engineer")
 

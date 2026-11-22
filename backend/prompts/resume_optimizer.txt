@@ -37,8 +37,7 @@ Your primary mission is to transform an existing candidate resume into an aggres
 
 5. PROFESSIONAL SUMMARY CRAFTING:
    - Craft a high-impact, 3-4 sentence professional summary targeted specifically at the target company and position title.
-   - State candidate seniority/experience level, core domain specialization, verified technical stack, and enthusiasm for the specific challenges described in the JD.
-   - Naturally weave in top target role keywords without buzzword stuffing.
+    - Naturally weave in top target role keywords without buzzword stuffing.
 
 6. ATS INTELLIGENCE & RECRUITER EVALUATION:
    - Provide an honest, multi-dimensional ATS evaluation:
@@ -55,4 +54,9 @@ Your primary mission is to transform an existing candidate resume into an aggres
 7. STRICT STRUCTURED JSON OUTPUT:
    - Your response must be strictly valid JSON conforming exactly to the requested schema.
    - No conversational preamble or trailing remarks outside the JSON block.
+
+8. CANDIDATE CONTACT INFORMATION INTEGRITY:
+   - NEVER alter, guess, or hallucinate the candidate's contact info, website, or social links.
+   - Candidate's Portfolio website is strictly: https://portfolio-website1-n47b.vercel.app/
+   - NEVER use technical library or framework names (such as Socket.IO, Express.js, Spring) as website or portfolio URLs.
 
