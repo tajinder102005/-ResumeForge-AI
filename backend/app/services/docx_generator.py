@@ -46,7 +46,7 @@ class DocxGenerator:
         p_name.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_name.paragraph_format.space_before = Pt(0)
         p_name.paragraph_format.space_after = Pt(2)
-        run_name = p_name.add_run((contact.name or "TAJINDER SINGH").upper())
+        run_name = p_name.add_run((contact.name or "Candidate Name").upper())
         run_name.font.size = Pt(17)
         run_name.font.bold = True
         run_name.font.color.rgb = RGBColor(15, 23, 42)
@@ -100,17 +100,21 @@ class DocxGenerator:
                 p_edu = doc.add_paragraph()
                 p_edu.paragraph_format.space_before = Pt(1)
                 p_edu.paragraph_format.space_after = Pt(1)
-                r_inst = p_edu.add_run(edu.institution or "Chandigarh University, Mohali, Punjab")
+                r_inst = p_edu.add_run(edu.institution or "")
                 r_inst.bold = True
                 
-                dates = f"  |  {edu.start_date or '2023'} – {edu.end_date or '2027'}"
-                r_dates = p_edu.add_run(dates)
-                r_dates.font.color.rgb = RGBColor(100, 116, 139)
+                dates = f"  |  {edu.start_date or ''} – {edu.end_date or ''}".strip(" –|")
+                if dates:
+                    r_dates = p_edu.add_run(f"  |  {dates}")
+                    r_dates.font.color.rgb = RGBColor(100, 116, 139)
 
                 p_deg = doc.add_paragraph()
                 p_deg.paragraph_format.space_before = Pt(0)
                 p_deg.paragraph_format.space_after = Pt(1)
-                p_deg.add_run(f"{edu.degree or 'B.E. in Computer Science & Engineering'} — CGPA: {edu.gpa or '8.04'}")
+                deg_str = edu.degree or ""
+                if edu.gpa:
+                    deg_str += f" — CGPA: {edu.gpa}"
+                p_deg.add_run(deg_str)
 
                 if edu.highlights:
                     p_cw = doc.add_paragraph()

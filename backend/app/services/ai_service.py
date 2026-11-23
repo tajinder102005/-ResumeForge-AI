@@ -161,10 +161,10 @@ class AIService:
             if is_valid_portfolio(updated.website):
                 updated.portfolio = updated.website
             else:
-                updated.portfolio = "https://portfolio-website1-n47b.vercel.app/"
+                updated.portfolio = ""
 
         if not is_valid_portfolio(updated.website):
-            updated.website = updated.portfolio
+            updated.website = updated.portfolio or ""
 
         return updated
 
@@ -294,14 +294,16 @@ class AIService:
                 "name": resume.contact_info.name,
                 "email": resume.contact_info.email,
                 "phone": resume.contact_info.phone,
+                "location": resume.contact_info.location,
                 "linkedin": resume.contact_info.linkedin,
                 "github": resume.contact_info.github,
                 "leetcode": resume.contact_info.leetcode,
-                "portfolio": resume.contact_info.portfolio or resume.contact_info.website or "https://portfolio-website1-n47b.vercel.app/",
+                "portfolio": resume.contact_info.portfolio or resume.contact_info.website or "",
                 "summary": resume.summary,
                 "skills": resume.skills,
                 "projects": [p.model_dump() for p in resume.projects],
                 "education": [edu.model_dump() for edu in resume.education],
+                "achievements": resume.achievements,
             },
             "candidate_confirmed_skills": [
                 s.model_dump() for s in payload.verified_skills
@@ -311,17 +313,20 @@ class AIService:
             "custom_instructions": payload.custom_instructions or "",
         }
 
+        ci = resume.contact_info
+        contact_summary = f"Name: {ci.name or 'Candidate'}, Email: {ci.email or ''}, Phone: {ci.phone or ''}, Location: {ci.location or ''}, LinkedIn: {ci.linkedin or ''}, GitHub: {ci.github or ''}, LeetCode: {ci.leetcode or ''}, Portfolio: {ci.portfolio or ci.website or ''}"
+
         prompt_message = (
             "You are an executive resume architect. Generate an aggressively optimized 1-page ATS resume strictly adhering to:\n"
             "1. LENGTH: Exactly ONE page. Zero overflow.\n"
             "2. SECTION ORDER: Header -> Professional Summary -> Education -> Technical Skills -> Technical Projects -> Achievements.\n"
             "3. ZERO FABRICATION: Do NOT invent metrics, percentages (like 30% or 40%), fake user counts (like 5k+ concurrent users), or transaction numbers (like 10k+ daily transactions). Only use verifiable, truthful achievements from the candidate's actual resume.\n"
-            "4. CONTACT INFO: STRICTLY PRESERVE candidate's exact contact info: Name: Tajinder Singh, Email: tajinder.swe@gmail.com, Phone: +91-9518671610, Location: Yamuna Nagar, Haryana, India, LinkedIn: https://linkedin.com/in/tajinderasingh, GitHub: https://github.com/tajinder102005, LeetCode: https://leetcode.com/u/Rednijat123/, Portfolio: https://portfolio-website1-n47b.vercel.app/. NEVER replace the portfolio link with programming libraries like Socket.IO or Express.\n"
-            "5. SUMMARY: Exactly 2 technical sentences targeted at the role and company. Mention strong OOP, distributed systems, and 1000+ DSA problems solved.\n"
-            "6. EDUCATION: Chandigarh University, Mohali, Punjab — B.E. in Computer Science & Engineering | 2023 - 2027 | CGPA: 8.04. Coursework: Data Structures & Algorithms, OOP, Operating Systems, DBMS, Computer Networks.\n"
-            "7. TECHNICAL SKILLS: Categorize into Programming Languages, Frameworks & Libraries, Databases & Storage, Cloud & DevOps, Backend & Distributed Systems. CRITICAL: Each category must be a JSON array of strings (e.g. [\"Java\", \"Spring Boot\"]), NEVER a single comma-separated string. Prioritize skills matching the target role.\n"
-            "8. PROJECTS: Exactly 3 bullets for JobFlow and FinTrack; exactly 2 bullets for Real-Time Chat App. Provide each bullet as a string inside 'bullet_points' array. Format: Strong action verb + what was built + tech + truthful outcome. Never return empty bullet_points.\n"
-            "9. ACHIEVEMENTS: Include a JSON array of 3-4 strings (LeetCode 1000+ DSA problems, 500 Days Badge, NPTEL Cloud Computing Silver, hackathons).\n"
+            f"4. CONTACT INFO: STRICTLY PRESERVE candidate's exact contact info: {contact_summary}. If a link was empty in the candidate resume, keep it empty. NEVER replace the portfolio link with programming libraries like Socket.IO or Express.\n"
+            "5. SUMMARY: Exactly 2 technical sentences targeted at the role and company, emphasizing the candidate's actual primary strengths and technologies.\n"
+            "6. EDUCATION: Strictly preserve the candidate's actual education (institution, degree, graduation year, CGPA/GPA, and relevant coursework) as provided in candidate_background.\n"
+            "7. TECHNICAL SKILLS: Categorize into relevant categories (e.g. Programming Languages, Frameworks & Libraries, Databases & Storage, Cloud & DevOps, Backend & Distributed Systems). CRITICAL: Each category must be a JSON array of strings (e.g. [\"Python\", \"PostgreSQL\"]), NEVER a single comma-separated string. Prioritize skills matching the target role.\n"
+            "8. PROJECTS: Optimize the candidate's actual projects from candidate_background. Provide 2-4 impactful bullet points per project inside 'bullet_points' array. Format: Strong action verb + what was built + tech + truthful outcome. Never return empty bullet_points.\n"
+            "9. ACHIEVEMENTS: Include an array of verifiable achievements from candidate_background (or an empty list if none were provided). Do NOT fabricate certifications.\n"
             "Output strictly valid JSON with keys: contact_info, summary, rebuilt_skills, projects, education, achievements, recommended_project_enhancements, ats_report.\n\n"
             f"{json.dumps(user_content)}"
         )
@@ -502,37 +507,33 @@ class AIService:
 
                     if not summary_text or len(summary_text) > 350 or "explicitly tailored" in summary_text.lower() or has_fake_metric:
                         company_target_str = f" at {target_company}" if target_company and target_company != "Target Organization" else ""
-                        role_target_str = f"{target_role} role" if target_role and "intern" not in target_role.lower() else "Software Development Internship"
+                        role_target_str = f"{target_role} role" if target_role and "intern" not in target_role.lower() else "Software Development"
+                        skills_sample = ", ".join(resume.skills[:4]) if resume.skills else "modern software engineering practices"
                         summary_text = (
-                            f"Computer Science undergraduate (B.E., 2027) with hands-on experience building full-stack applications, "
-                            f"RESTful APIs, and distributed microservices using Java, Spring Boot, React, and SQL/NoSQL databases. "
-                            f"Strong foundation in OOP, SOLID principles, and system scaling with 1000+ DSA problems solved. "
+                            f"Dedicated software professional with hands-on experience in building reliable applications, "
+                            f"APIs, and scalable systems using {skills_sample}. "
+                            f"Committed to clean architecture, robust problem-solving, and delivering high-quality solutions. "
                             f"Seeking a {role_target_str}{company_target_str}."
                         )
 
-                    # Build education
-                    edu_list = [
-                        EducationItem(
-                            institution="Chandigarh University, Mohali, Punjab",
-                            degree="B.E. in Computer Science & Engineering",
-                            start_date="2023",
-                            end_date="2027",
-                            gpa="8.04",
-                            highlights=["Data Structures & Algorithms", "Operating Systems", "DBMS", "Computer Networks", "OOP"]
-                        )
-                    ]
+                    # Build education from data or fallback to candidate's uploaded resume education
+                    edu_list = []
+                    raw_edu = data.get("education") or []
+                    if isinstance(raw_edu, list) and raw_edu:
+                        for ed in raw_edu:
+                            if isinstance(ed, dict):
+                                edu_list.append(EducationItem(**ed))
+                    if not edu_list and resume.education:
+                        edu_list = resume.education
 
-                    # Parse achievements
+                    # Parse achievements from data or fallback to candidate's uploaded achievements
                     raw_ach = data.get("achievements") or []
                     if isinstance(raw_ach, list) and raw_ach:
                         achievements_list = [str(a).strip() for a in raw_ach if str(a).strip()]
+                    elif resume.achievements:
+                        achievements_list = resume.achievements
                     else:
-                        achievements_list = [
-                            "Solved 1000+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
-                            "Earned the 500 Days Coding Badge on LeetCode.",
-                            "Completed NPTEL Cloud Computing certification with Silver grade.",
-                            "Participated in multiple hackathons, applying software development and problem-solving skills to build solutions under time constraints."
-                        ]
+                        achievements_list = []
 
                     enhancements = []
                     raw_enh = data.get("recommended_project_enhancements") or data.get("project_enhancements", [])
@@ -600,89 +601,54 @@ class AIService:
             payload.custom_instructions
         )
 
-        # 3. Professional Summary (Clean, truthful, NO injected prompt text)
+        # 3. Professional Summary (Clean, truthful, targeted to opening)
         company_target_str = f" at {target_company}" if target_company and target_company != "Target Organization" else ""
-        role_target_str = f"{target_role} role" if target_role and "intern" not in target_role.lower() else "Software Development Internship"
-        summary = (
-            f"Computer Science undergraduate (B.E., 2027) with hands-on experience building back-end applications, "
-            f"microservices, and AI-integrated products using Java, Spring Boot, Node.js, React, and SQL/NoSQL databases. "
-            f"Strong in OOP, SOLID principles, REST APIs, event-driven systems (Kafka, RabbitMQ), and RAG/LLM features. "
-            f"Solved 900+ DSA problems. Seeking a {role_target_str}{company_target_str}."
-        )
+        role_target_str = f"{target_role} role" if target_role and "intern" not in target_role.lower() else "Software Development"
+        cand_skills = ", ".join(resume.skills[:4]) if resume.skills else "modern software engineering practices"
+        base_sum = resume.summary.rstrip(".") if (resume.summary and 15 < len(resume.summary) < 280) else f"Dedicated software professional with hands-on experience in building robust applications, APIs, and scalable systems using {cand_skills}"
+        summary = f"{base_sum}. Seeking a {role_target_str}{company_target_str}."
 
-        # 4. Standardized Education
-        edu_list = [
-            EducationItem(
-                institution="Chandigarh University, Mohali, Punjab",
-                degree="B.E. in Computer Science & Engineering",
-                start_date="2023",
-                end_date="2027",
-                gpa="8.04",
-                highlights=["Data Structures & Algorithms", "OOP", "Operating Systems", "DBMS", "Computer Networks"]
-            )
-        ]
+        # 4. Candidate Education (Preserve user's actual education)
+        edu_list = resume.education if resume.education else []
 
-        # 5. Intelligent Project Tailoring (Truthful project bullets from candidate resume)
+        # 5. Intelligent Project Tailoring (Ground in candidate's actual projects)
         tailored_projects: List[ProjectItem] = []
         enhancements: List[ProjectEnhancementRecommendation] = []
 
-        default_projects = [
-            {
-                "name": "JobFlow — Microservice-Based Job Application Platform",
-                "tech": ["Java", "Spring Boot", "PostgreSQL", "Kafka", "RabbitMQ"],
-                "bullets": [
-                    "Architected a microservices platform for candidates, recruiters, and admins with auth, job, and application services.",
-                    "Built secured REST APIs with Spring Boot, API Gateway, Eureka, OpenFeign, JWT, RBAC, and Resilience4j.",
-                    "Implemented Kafka and RabbitMQ event-driven workflows for async notifications, with Zipkin distributed tracing.",
-                    "Used PostgreSQL for persistence and Elasticsearch for fast job and candidate search."
-                ]
-            },
-            {
-                "name": "FinTrack — Personal Finance Platform with AI Advisor",
-                "tech": ["React", "Node.js", "MongoDB", "Redis", "Pinecone"],
-                "bullets": [
-                    "Built a full-stack MERN finance app for transaction tracking, budgeting, expense analytics, and reporting.",
-                    "Implemented JWT auth, bcrypt hashing, and Google/GitHub OAuth 2.0 with protected Express.js routes.",
-                    "Developed a RAG pipeline with embeddings and Pinecone vector search to give Gemini relevant financial context.",
-                    "Added Redis caching, real-time Socket.IO budget alerts, and React dashboards using Context API and Recharts."
-                ]
-            },
-            {
-                "name": "Real-Time Chat Application — Messaging Platform",
-                "tech": ["React", "Node.js", "Socket.IO", "Redis", "Supabase"],
-                "bullets": [
-                    "Built a real-time messaging app with one-to-one and group chats using React, Node.js, and Socket.IO.",
-                    "Implemented user discovery via email, phone, and QR code, with typing indicators and online/offline presence.",
-                    "Used Redis Pub/Sub to sync messages across server instances; integrated Supabase for auth and message storage."
-                ]
-            }
-        ]
-
-        for p_def in default_projects:
+        if resume.projects:
+            for p in resume.projects:
+                bullets = p.bullet_points if p.bullet_points else ([p.description] if p.description else ["Designed and implemented core application modules."])
+                tailored_projects.append(ProjectItem(
+                    name=p.name,
+                    description=p.description or "",
+                    technologies=p.technologies or [],
+                    bullet_points=bullets,
+                    link=p.link
+                ))
+                enhancements.append(ProjectEnhancementRecommendation(
+                    project_name=p.name,
+                    target_technologies=["Docker", "CI/CD", "Cloud Infrastructure"],
+                    suggested_features=[
+                        f"Implement containerization with Docker and automated testing.",
+                        f"Configure automated CI/CD pipeline for rapid, verified delivery."
+                    ],
+                    architecture_recommendation=f"Deploy {p.name} with structured logging and performance monitoring.",
+                    business_impact_rationale=f"Addresses key production readiness requirements for the {target_role} role."
+                ))
+        else:
+            sample_techs = resume.skills[:4] if resume.skills else ["Software Engineering", "APIs"]
             tailored_projects.append(ProjectItem(
-                name=p_def["name"],
+                name="Key Technical Project",
                 description="",
-                technologies=p_def["tech"],
-                bullet_points=p_def["bullets"],
+                technologies=sample_techs,
+                bullet_points=[
+                    "Designed and developed key application features following modular design principles.",
+                    "Implemented RESTful endpoints and integrated persistent database storage."
+                ],
                 link=None
             ))
 
-            enhancements.append(ProjectEnhancementRecommendation(
-                project_name=p_def["name"],
-                target_technologies=["Docker", "Kubernetes", "CI/CD"],
-                suggested_features=[
-                    "Implement containerization with Docker and Kubernetes for zero-downtime rolling deployments.",
-                    "Set up automated CI/CD pipeline with GitHub Actions for testing and artifact distribution."
-                ],
-                architecture_recommendation=f"Deploy {p_def['name']} as auto-scaling microservices with distributed tracing.",
-                business_impact_rationale=f"Addresses key distributed systems requirements in the {target_role} role."
-            ))
-
-        achievements_list = [
-            "Solved 900+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
-            "Earned the 500 Days Coding Badge on LeetCode.",
-            "Completed NPTEL Cloud Computing certification with Silver grade."
-        ]
+        achievements_list = resume.achievements if resume.achievements else []
 
         ats_report = AtsScorer.calculate_report(
             jd_analysis=jd_analysis,

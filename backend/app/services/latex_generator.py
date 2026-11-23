@@ -414,18 +414,7 @@ TEMPLATE_SIDEBAR_PHOTO = r"""\documentclass[letterpaper,10pt]{article}
   {\Huge\bfseries\color{headerdark} __CANDIDATE_NAME__}\\[3pt]
   {\large\bfseries\color{accentgreen} __TARGET_ROLE__}\\[6pt]
   \small
-  {\color{iconblue}\faMapMarker*}\, __LOCATION__
-  \quad{\color{pipesep}\textbar}\quad
-  {\color{iconblue}\faPhone*}\, __PHONE__
-  \quad{\color{pipesep}\textbar}\quad
-  \iconlink{\faEnvelope}{mailto:__EMAIL__}{__EMAIL__}\\[4pt]
-  \iconlink{\faLinkedin}{__LINKEDIN_URL__}{tajinderasingh}
-  \quad{\color{pipesep}\textbar}\quad
-  \iconlink{\faGithub}{__GITHUB_URL__}{tajinder102005}
-  \quad{\color{pipesep}\textbar}\quad
-  \iconlink{\faCode}{__LEETCODE_URL__}{Rednijat123}
-  \quad{\color{pipesep}\textbar}\quad
-  \iconlink{\faGlobe}{__PORTFOLIO_URL__}{Portfolio}
+  __PHOTO_CONTACT_LINES__
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.23\linewidth}
@@ -486,52 +475,109 @@ class LatexGenerator:
         base_template = cls.TEMPLATES.get(tpl_key, TEMPLATE_MODERN)
 
         contact = resume.contact_info
-        raw_name = contact.name or "Tajinder Singh"
-        if raw_name.isupper():
+        raw_name = contact.name or "Candidate Name"
+        if raw_name.isupper() and len(raw_name) > 3:
             raw_name = raw_name.title()
         candidate_name_esc = escape_latex(raw_name)
-        email_esc = escape_latex(contact.email or "tajinder.swe@gmail.com")
-        phone_esc = escape_latex(contact.phone or "+91-9518671610")
-        loc_esc = escape_latex(contact.location or "Yamuna Nagar, Haryana, India")
+        email_esc = escape_latex(contact.email or "")
+        phone_esc = escape_latex(contact.phone or "")
+        loc_esc = escape_latex(contact.location or "")
 
-        linkedin_url = contact.linkedin if (contact.linkedin and "linkedin.com" in contact.linkedin.lower()) else "https://linkedin.com/in/tajinderasingh"
-        github_url = contact.github if (contact.github and "github.com" in contact.github.lower()) else "https://github.com/tajinder102005"
-        leetcode_url = contact.leetcode if (contact.leetcode and "leetcode.com" in contact.leetcode.lower()) else "https://leetcode.com/u/Rednijat123/"
+        linkedin_url = contact.linkedin if (contact.linkedin and "linkedin.com" in contact.linkedin.lower()) else ""
+        github_url = contact.github if (contact.github and "github.com" in contact.github.lower()) else ""
+        leetcode_url = contact.leetcode if (contact.leetcode and "leetcode.com" in contact.leetcode.lower()) else ""
         
         raw_portfolio = contact.portfolio or contact.website or ""
         # Guard against LLM hallucinating tech library names (e.g. Socket.IO) as portfolio
-        if not raw_portfolio or any(junk in raw_portfolio.lower() for junk in ["socket.io", "express", "react", "spring", "kafka", "mongodb", "node", "supabase"]):
-            portfolio_url = "https://portfolio-website1-n47b.vercel.app/"
+        if raw_portfolio and any(junk in raw_portfolio.lower() for junk in ["socket.io", "express", "react", "spring", "kafka", "mongodb", "node", "supabase"]):
+            portfolio_url = ""
         else:
             portfolio_url = raw_portfolio
 
         target_role_esc = escape_latex(resume.job_title or "Software Engineer")
 
+        def get_clean_label(url: str, default: str) -> str:
+            if not url:
+                return default
+            parts = [p for p in url.rstrip("/").split("/") if p]
+            if parts:
+                cand = parts[-1].split("?")[0].strip()
+                if cand and 2 < len(cand) < 25 and not cand.startswith("http"):
+                    return cand
+            return default
+
         # -----------------------------------------------------------------
-        # 2-Line Header Block with FontAwesome 5 Icons & Portfolio Website
-        # Exactly matching user's requested layout:
-        # Line 1: MapMarker, Phone, Envelope
-        # Line 2: LinkedIn, GitHub, LeetCode, Globe (Portfolio)
+        # Dynamic 2-Line Header Block with FontAwesome 5 Icons & Links
+        # Only renders items the user actually has
         # -----------------------------------------------------------------
+        line1_items = []
+        if loc_esc:
+            line1_items.append(f"{{\\color{{iconblue}}\\faMapMarker*}}\\, {loc_esc}")
+        if phone_esc:
+            line1_items.append(f"{{\\color{{iconblue}}\\faPhone*}}\\, {phone_esc}")
+        if email_esc:
+            line1_items.append(f"\\iconlink{{\\faEnvelope}}{{mailto:{email_esc}}}{{{email_esc}}}")
+
+        line2_items = []
+        if linkedin_url:
+            li_label = escape_latex(get_clean_label(linkedin_url, "LinkedIn"))
+            line2_items.append(f"\\iconlink{{\\faLinkedin}}{{{escape_latex(linkedin_url)}}}{{{li_label}}}")
+        if github_url:
+            gh_label = escape_latex(get_clean_label(github_url, "GitHub"))
+            line2_items.append(f"\\iconlink{{\\faGithub}}{{{escape_latex(github_url)}}}{{{gh_label}}}")
+        if leetcode_url:
+            lc_label = escape_latex(get_clean_label(leetcode_url, "LeetCode"))
+            line2_items.append(f"\\iconlink{{\\faCode}}{{{escape_latex(leetcode_url)}}}{{{lc_label}}}")
+        if portfolio_url:
+            line2_items.append(f"\\iconlink{{\\faGlobe}}{{{escape_latex(portfolio_url)}}}{{Portfolio}}")
+
+        sep = " \\quad{\\color{iconblue}\\textbar}\\quad "
+        h_lines = [f"{{\\Huge\\bfseries\\color{{navy}} {candidate_name_esc}}}"]
+        if line1_items or line2_items:
+            h_lines.append("\\small")
+        if line1_items:
+            h_lines.append(sep.join(line1_items))
+        if line2_items:
+            if line1_items:
+                h_lines[-1] += "\\\\[5pt]"
+            h_lines.append(sep.join(line2_items))
+
         header_block = (
             "\\begin{center}\n"
-            f"    {{\\Huge\\bfseries\\color{{navy}} {candidate_name_esc}}}\\\\[7pt]\n"
-            "    \\small\n"
-            f"    {{\\color{{iconblue}}\\faMapMarker*}}\\, {loc_esc}\n"
-            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
-            f"    {{\\color{{iconblue}}\\faPhone*}}\\, {phone_esc}\n"
-            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
-            f"    \\iconlink{{\\faEnvelope}}{{mailto:{email_esc}}}{{{email_esc}}}\\\\[5pt]\n"
-            f"    \\iconlink{{\\faLinkedin}}{{{escape_latex(linkedin_url)}}}{{tajinderasingh}}\n"
-            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
-            f"    \\iconlink{{\\faGithub}}{{{escape_latex(github_url)}}}{{tajinder102005}}\n"
-            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
-            f"    \\iconlink{{\\faCode}}{{{escape_latex(leetcode_url)}}}{{Rednijat123}}\n"
-            "    \\quad{\\color{iconblue}\\textbar}\\quad\n"
-            f"    \\iconlink{{\\faGlobe}}{{{escape_latex(portfolio_url)}}}{{Portfolio}}\n"
+            + "    " + "\n    ".join(h_lines) + "\n"
             "\\end{center}\n"
             "\\vspace{-6pt}"
         )
+
+        # Build photo header contact lines
+        photo_line1_items = []
+        if loc_esc:
+            photo_line1_items.append(f"{{\\color{{iconblue}}\\faMapMarker*}}\\, {loc_esc}")
+        if phone_esc:
+            photo_line1_items.append(f"{{\\color{{iconblue}}\\faPhone*}}\\, {phone_esc}")
+        if email_esc:
+            photo_line1_items.append(f"\\iconlink{{\\faEnvelope}}{{mailto:{email_esc}}}{{{email_esc}}}")
+
+        photo_line2_items = []
+        if linkedin_url:
+            li_label = escape_latex(get_clean_label(linkedin_url, "LinkedIn"))
+            photo_line2_items.append(f"\\iconlink{{\\faLinkedin}}{{{escape_latex(linkedin_url)}}}{{{li_label}}}")
+        if github_url:
+            gh_label = escape_latex(get_clean_label(github_url, "GitHub"))
+            photo_line2_items.append(f"\\iconlink{{\\faGithub}}{{{escape_latex(github_url)}}}{{{gh_label}}}")
+        if leetcode_url:
+            lc_label = escape_latex(get_clean_label(leetcode_url, "LeetCode"))
+            photo_line2_items.append(f"\\iconlink{{\\faCode}}{{{escape_latex(leetcode_url)}}}{{{lc_label}}}")
+        if portfolio_url:
+            photo_line2_items.append(f"\\iconlink{{\\faGlobe}}{{{escape_latex(portfolio_url)}}}{{Portfolio}}")
+
+        photo_sep = " \\quad{\\color{pipesep}\\textbar}\\quad "
+        photo_contact_parts = []
+        if photo_line1_items:
+            photo_contact_parts.append(photo_sep.join(photo_line1_items))
+        if photo_line2_items:
+            photo_contact_parts.append(photo_sep.join(photo_line2_items))
+        photo_contact_lines = "\\\\[4pt]\n  ".join(photo_contact_parts) if photo_contact_parts else ""
 
         # Summary
         summary_esc = escape_latex(resume.summary.strip())
@@ -539,40 +585,37 @@ class LatexGenerator:
         # Education (1-column standard)
         edu_lines = []
         for edu in resume.education:
-            inst = edu.institution or "Chandigarh University, Mohali, Punjab"
-            deg = edu.degree or "B.E. in Computer Science & Engineering"
-            dates = f"{edu.start_date or '2023'} -- {edu.end_date or '2027'}"
-            gpa = f"CGPA: {edu.gpa}" if edu.gpa else "CGPA: 8.04"
-            cw = ", ".join(edu.highlights) if edu.highlights else "Data Structures & Algorithms, OOP, Operating Systems, DBMS, Computer Networks, Multithreading"
+            inst = edu.institution or ""
+            deg = edu.degree or ""
+            dates = f"{edu.start_date or ''} -- {edu.end_date or ''}".strip(" -")
+            gpa = f"CGPA: {edu.gpa}" if edu.gpa else ""
+            cw = ", ".join(edu.highlights) if edu.highlights else ""
 
-            edu_lines.append(f"\\textbf{{{escape_latex(inst)}}} \\hfill {dates}\\\\")
-            edu_lines.append(f"{escape_latex(deg)} \\hfill {gpa}\\\\")
-            edu_lines.append(f"\\textit{{Relevant Coursework:}} {escape_latex(cw)}")
+            if inst:
+                date_str = f" \\hfill {dates}" if dates else ""
+                edu_lines.append(f"\\textbf{{{escape_latex(inst)}}}{date_str}\\\\")
+                if deg:
+                    gpa_str = f" \\hfill {gpa}" if gpa else ""
+                    edu_lines.append(f"{escape_latex(deg)}{gpa_str}\\\\")
+                if cw:
+                    edu_lines.append(f"\\textit{{Relevant Coursework:}} {escape_latex(cw)}")
 
-        if not edu_lines:
-            edu_lines = [
-                r"\textbf{Chandigarh University, Mohali, Punjab} \hfill 2023 -- 2027\\",
-                r"B.E. in Computer Science \& Engineering \hfill CGPA: 8.04\\",
-                r"\textit{Relevant Coursework:} Data Structures \& Algorithms, OOP, Operating Systems, DBMS, Computer Networks, Multithreading"
-            ]
         education_section = "\n".join(edu_lines)
 
         # Education (Sidebar compact)
         sidebar_edu_lines = []
         for edu in resume.education:
-            inst = edu.institution or "Chandigarh University"
-            deg = edu.degree or "B.E. Computer Science"
-            dates = f"{edu.start_date or '2023'} -- {edu.end_date or '2027'}"
-            gpa = f"CGPA: {edu.gpa}" if edu.gpa else "CGPA: 8.04"
-            sidebar_edu_lines.append(f"\\textbf{{{escape_latex(inst)}}}\\\\[2pt]")
-            sidebar_edu_lines.append(f"{escape_latex(deg)}\\\\[2pt]")
-            sidebar_edu_lines.append(f"{dates} $|$ {gpa}\\\\[6pt]")
-        if not sidebar_edu_lines:
-            sidebar_edu_lines = [
-                r"\textbf{Chandigarh University}\\[2pt]",
-                r"B.E. Computer Science\\[2pt]",
-                r"2023 -- 2027 $|$ CGPA: 8.04\\[6pt]"
-            ]
+            inst = edu.institution or ""
+            deg = edu.degree or ""
+            dates = f"{edu.start_date or ''} -- {edu.end_date or ''}".strip(" -")
+            gpa = f"CGPA: {edu.gpa}" if edu.gpa else ""
+            if inst:
+                sidebar_edu_lines.append(f"\\textbf{{{escape_latex(inst)}}}\\\\[2pt]")
+            if deg:
+                sidebar_edu_lines.append(f"{escape_latex(deg)}\\\\[2pt]")
+            if dates or gpa:
+                meta = " $|$ ".join([p for p in [dates, gpa] if p])
+                sidebar_edu_lines.append(f"{meta}\\\\[6pt]")
         sidebar_education = "\n".join(sidebar_edu_lines)
 
         # Skills Block (1-column standard)
@@ -733,23 +776,17 @@ class LatexGenerator:
         projects_section = "\n\n".join(proj_blocks)
 
         # Achievements Section
-        achievements_list = resume.achievements
-        if not achievements_list:
-            achievements_list = [
-                "Solved 1000+ Data Structures and Algorithms problems across LeetCode and competitive programming platforms.",
-                "Earned the 500 Days Coding Badge on LeetCode.",
-                "Completed NPTEL Cloud Computing certification with Silver grade.",
-                "Participated in multiple hackathons, applying software development and problem-solving skills to build solutions under time constraints."
-            ]
-
-        ach_bullets = "\n".join([f"  \\item {escape_latex(a)}" for a in achievements_list])
-        
-        achieve_section = (
-            f"\\section{{Achievements}}\n"
-            f"\\begin{{itemize}}\n"
-            f"{ach_bullets}\n"
-            f"\\end{{itemize}}"
-        )
+        achievements_list = resume.achievements or []
+        if achievements_list:
+            ach_bullets = "\n".join([f"  \\item {escape_latex(a)}" for a in achievements_list])
+            achieve_section = (
+                f"\\section{{Achievements}}\n"
+                f"\\begin{{itemize}}\n"
+                f"{ach_bullets}\n"
+                f"\\end{{itemize}}"
+            )
+        else:
+            achieve_section = ""
 
         tex = base_template
         tex = tex.replace("__HEADER_BLOCK__", header_block)
@@ -758,16 +795,28 @@ class LatexGenerator:
         tex = tex.replace("__LOCATION__", loc_esc)
         tex = tex.replace("__PHONE__", phone_esc)
         tex = tex.replace("__EMAIL__", email_esc)
+        tex = tex.replace("__PHOTO_CONTACT_LINES__", photo_contact_lines)
         tex = tex.replace("__LINKEDIN_URL__", escape_latex(linkedin_url))
         tex = tex.replace("__GITHUB_URL__", escape_latex(github_url))
         tex = tex.replace("__LEETCODE_URL__", escape_latex(leetcode_url))
         tex = tex.replace("__PORTFOLIO_URL__", escape_latex(portfolio_url))
         tex = tex.replace("__AVATAR_BLOCK__", avatar_block)
         tex = tex.replace("__SUMMARY__", summary_esc)
-        tex = tex.replace("__EDUCATION_SECTION__", education_section)
+
+        if education_section:
+            tex = tex.replace("__EDUCATION_SECTION__", education_section)
+        else:
+            # If no education, remove the section cleanly
+            tex = tex.replace("\\section{Education}\n__EDUCATION_SECTION__\n\n", "")
+            tex = tex.replace("\\section{Education}\n__EDUCATION_SECTION__", "")
+
         tex = tex.replace("__SKILLS_BLOCK__", skills_block)
         tex = tex.replace("__PROJECTS_SECTION__", projects_section)
-        tex = tex.replace("__ACHIEVEMENTS_SECTION__", achieve_section)
+
+        if achieve_section:
+            tex = tex.replace("__ACHIEVEMENTS_SECTION__", achieve_section)
+        else:
+            tex = tex.replace("__ACHIEVEMENTS_SECTION__", "")
         
         # Legacy sidebar placeholders (if any)
         tex = tex.replace("__SIDEBAR_CONTACT__", sidebar_contact)

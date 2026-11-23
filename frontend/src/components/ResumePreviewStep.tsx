@@ -93,14 +93,17 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
   const ats = optimized.ats_report;
   const contact = optimized.contact_info;
 
-  const linkedinUrl = contact?.linkedin || 'https://linkedin.com/in/tajinderasingh';
-  const githubUrl = contact?.github || 'https://github.com/tajinder102005';
-  const leetcodeUrl = contact?.leetcode || 'https://leetcode.com/u/Rednijat123/';
-  const portfolioUrl = (contact?.portfolio && !contact.portfolio.toLowerCase().includes('socket.io')) 
-    ? contact.portfolio 
-    : (contact?.website && !contact.website.toLowerCase().includes('socket.io')) 
-      ? contact.website 
-      : 'https://portfolio-website1-n47b.vercel.app/';
+  const linkedinUrl = contact?.linkedin || '';
+  const githubUrl = contact?.github || '';
+  const leetcodeUrl = contact?.leetcode || '';
+  const rawPortfolio = contact?.portfolio || contact?.website || '';
+  const portfolioUrl =
+    rawPortfolio &&
+    !['socket.io', 'express', 'react', 'spring', 'kafka'].some((bad) =>
+      rawPortfolio.toLowerCase().includes(bad)
+    )
+      ? rawPortfolio
+      : '';
 
   const handleCopyLatex = () => {
     navigator.clipboard.writeText(editableLatex);
@@ -117,10 +120,10 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [isSavingContact, setIsSavingContact] = useState(false);
   const [contactForm, setContactForm] = useState({
-    name: contact?.name || 'Tajinder Singh',
-    email: contact?.email || 'tajinder.swe@gmail.com',
-    phone: contact?.phone || '+91-9518671610',
-    location: contact?.location || 'Yamuna Nagar, Haryana, India',
+    name: contact?.name || '',
+    email: contact?.email || '',
+    phone: contact?.phone || '',
+    location: contact?.location || '',
     linkedin: linkedinUrl,
     github: githubUrl,
     leetcode: leetcodeUrl,
@@ -298,50 +301,58 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                 <span>{contact.phone}</span>
               </span>
             )}
-            <a
-              href={linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-950/40 text-blue-300 border border-blue-800/50 hover:bg-blue-900/40 transition-colors"
-            >
-              <Linkedin className="w-3 h-3 text-blue-400" />
-              <span>LinkedIn</span>
-            </a>
-            <a
-              href={githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-slate-800 text-purple-300 border border-purple-800/50 hover:bg-slate-700 transition-colors"
-            >
-              <Github className="w-3 h-3 text-purple-400" />
-              <span>GitHub</span>
-            </a>
-            <a
-              href={leetcodeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/50 hover:bg-amber-900/40 transition-colors"
-            >
-              <Code2 className="w-3 h-3 text-amber-400" />
-              <span>LeetCode</span>
-            </a>
-            <a
-              href={portfolioUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-teal-950/40 text-teal-300 border border-teal-800/50 hover:bg-teal-900/40 transition-colors font-medium cursor-pointer"
-            >
-              <Globe className="w-3 h-3 text-teal-400" />
-              <span>Portfolio Website</span>
-            </a>
+            {linkedinUrl && (
+              <a
+                href={linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-950/40 text-blue-300 border border-blue-800/50 hover:bg-blue-900/40 transition-colors"
+              >
+                <Linkedin className="w-3 h-3 text-blue-400" />
+                <span>LinkedIn</span>
+              </a>
+            )}
+            {githubUrl && (
+              <a
+                href={githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-slate-800 text-purple-300 border border-purple-800/50 hover:bg-slate-700 transition-colors"
+              >
+                <Github className="w-3 h-3 text-purple-400" />
+                <span>GitHub</span>
+              </a>
+            )}
+            {leetcodeUrl && (
+              <a
+                href={leetcodeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/50 hover:bg-amber-900/40 transition-colors"
+              >
+                <Code2 className="w-3 h-3 text-amber-400" />
+                <span>LeetCode</span>
+              </a>
+            )}
+            {portfolioUrl && (
+              <a
+                href={portfolioUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-teal-950/40 text-teal-300 border border-teal-800/50 hover:bg-teal-900/40 transition-colors font-medium cursor-pointer"
+              >
+                <Globe className="w-3 h-3 text-teal-400" />
+                <span>Portfolio Website</span>
+              </a>
+            )}
 
             <button
               onClick={() => {
                 setContactForm({
-                  name: contact?.name || 'Tajinder Singh',
-                  email: contact?.email || 'tajinder.swe@gmail.com',
-                  phone: contact?.phone || '+91-9518671610',
-                  location: contact?.location || 'Yamuna Nagar, Haryana, India',
+                  name: contact?.name || '',
+                  email: contact?.email || '',
+                  phone: contact?.phone || '',
+                  location: contact?.location || '',
                   linkedin: linkedinUrl,
                   github: githubUrl,
                   leetcode: leetcodeUrl,
@@ -825,10 +836,10 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
               <button
                 onClick={() => {
                   setContactForm({
-                    name: contact?.name || 'Tajinder Singh',
-                    email: contact?.email || 'tajinder.swe@gmail.com',
-                    phone: contact?.phone || '+91-9518671610',
-                    location: contact?.location || 'Yamuna Nagar, Haryana, India',
+                    name: contact?.name || '',
+                    email: contact?.email || '',
+                    phone: contact?.phone || '',
+                    location: contact?.location || '',
                     linkedin: linkedinUrl,
                     github: githubUrl,
                     leetcode: leetcodeUrl,
@@ -1160,7 +1171,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                     type="text"
                     value={contactForm.linkedin}
                     onChange={(e) => setContactForm({ ...contactForm, linkedin: e.target.value })}
-                    placeholder="https://linkedin.com/in/tajinderasingh"
+                    placeholder="https://linkedin.com/in/username"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-xs"
                   />
                 </div>
@@ -1174,7 +1185,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                     type="text"
                     value={contactForm.portfolio}
                     onChange={(e) => setContactForm({ ...contactForm, portfolio: e.target.value })}
-                    placeholder="https://portfolio-website1-n47b.vercel.app/"
+                    placeholder="https://yourportfolio.com"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-xs"
                   />
                 </div>
@@ -1188,7 +1199,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                     type="text"
                     value={contactForm.github}
                     onChange={(e) => setContactForm({ ...contactForm, github: e.target.value })}
-                    placeholder="https://github.com/tajinder102005"
+                    placeholder="https://github.com/username"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-xs"
                   />
                 </div>
@@ -1202,7 +1213,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                     type="text"
                     value={contactForm.leetcode}
                     onChange={(e) => setContactForm({ ...contactForm, leetcode: e.target.value })}
-                    placeholder="https://leetcode.com/u/Rednijat123/"
+                    placeholder="https://leetcode.com/u/username"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-xs"
                   />
                 </div>
@@ -1216,6 +1227,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                     type="email"
                     value={contactForm.email}
                     onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    placeholder="name@example.com"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-xs"
                   />
                 </div>
@@ -1229,6 +1241,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                     type="text"
                     value={contactForm.phone}
                     onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                    placeholder="+1 (555) 000-0000"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-xs"
                   />
                 </div>
@@ -1240,6 +1253,7 @@ export const ResumePreviewStep: React.FC<ResumePreviewStepProps> = ({
                   type="text"
                   value={contactForm.location}
                   onChange={(e) => setContactForm({ ...contactForm, location: e.target.value })}
+                  placeholder="City, State, Country"
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-xs"
                 />
               </div>

@@ -117,7 +117,7 @@ class ResumeExtractor:
         leetcode = leetcode_match.group(0) if leetcode_match else None
 
         portfolio_match = re.search(r"(?:https?:\/\/)?([a-zA-Z0-9-]+\.(?:vercel\.app|netlify\.app|github\.io|me|dev|app|org|tech|io)(?:\/[^\s,]*)?)", text, re.IGNORECASE)
-        portfolio = portfolio_match.group(0) if portfolio_match else "https://portfolio-website1-n47b.vercel.app/"
+        portfolio = portfolio_match.group(0) if portfolio_match else ""
         if portfolio and not portfolio.startswith("http"):
             portfolio = f"https://{portfolio}"
 
@@ -142,16 +142,32 @@ class ResumeExtractor:
             if clean_fname:
                 name = clean_fname.title()
 
+        # Extract location if mentioned in header lines
+        location = ""
+        for line in lines[:8]:
+            line_clean = line.strip()
+            if any(term in line_clean.lower() for term in ["india", "usa", "united states", "canada", "uk", "germany", "australia", "delhi", "bangalore", "mumbai", "california", "new york", "texas", "washington", "london", "singapore"]):
+                loc_cand = line_clean
+                if email and email in loc_cand:
+                    loc_cand = loc_cand.replace(email, "")
+                if phone and phone in loc_cand:
+                    loc_cand = loc_cand.replace(phone, "")
+                loc_cand = re.sub(r"[|•·,;]\s*$", "", loc_cand).strip()
+                loc_cand = re.sub(r"^[|•·,;]\s*", "", loc_cand).strip()
+                if 2 < len(loc_cand) < 60:
+                    location = loc_cand
+                    break
+
         return ContactInfo(
             name=name,
-            email=email or "tajinder.swe@gmail.com",
-            phone=phone or "+91-9518671610",
-            location="Yamuna Nagar, Haryana, India",
-            linkedin=linkedin or "https://linkedin.com/in/tajinderasingh",
-            github=github or "https://github.com/tajinder102005",
-            leetcode=leetcode or "https://leetcode.com/u/Rednijat123/",
-            website=portfolio,
-            portfolio=portfolio,
+            email=email or "",
+            phone=phone or "",
+            location=location,
+            linkedin=linkedin or "",
+            github=github or "",
+            leetcode=leetcode or "",
+            website=portfolio or "",
+            portfolio=portfolio or "",
         )
 
     @classmethod

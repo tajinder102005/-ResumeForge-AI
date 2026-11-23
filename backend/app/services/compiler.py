@@ -94,7 +94,22 @@ class LatexCompiler:
                 "validation": validation,
             }
 
-        # If Tectonic failed, log and report error without blindly overwriting with plain monochrome fallback
+        # If Tectonic failed and optimized_resume is available, fallback to Direct ATS PDF
+        if optimized_resume:
+            try:
+                cls.render_direct_ats_pdf(optimized_resume, pdf_path)
+                validation = cls.validate_pdf(pdf_path)
+                return {
+                    "success": True,
+                    "engine": "PyMuPDF Direct ATS (Offline Fallback)",
+                    "error": None,
+                    "tex_path": str(tex_path),
+                    "pdf_path": str(pdf_path),
+                    "validation": validation,
+                }
+            except Exception as fallback_err:
+                pass
+
         return {
             "success": False,
             "error": f"Tectonic Compilation Failed: {error_msg or 'Unknown compiler error'}",
@@ -173,9 +188,10 @@ class LatexCompiler:
         if contact.leetcode:
             lc_disp = contact.leetcode.replace("https://leetcode.com/u/", "").replace("https://leetcode.com/", "").rstrip("/")
             contact_parts.append(f"LeetCode: {lc_disp}")
-        portfolio_val = contact.portfolio or contact.website or "https://portfolio-website1-n47b.vercel.app/"
-        ws_disp = portfolio_val.replace("https://", "").replace("http://", "").rstrip("/")
-        contact_parts.append(f"Portfolio: {ws_disp}")
+        portfolio_val = contact.portfolio or contact.website or ""
+        if portfolio_val and not any(junk in portfolio_val.lower() for junk in ["socket.io", "express", "react"]):
+            ws_disp = portfolio_val.replace("https://", "").replace("http://", "").rstrip("/")
+            contact_parts.append(f"Portfolio: {ws_disp}")
         contact_str = " | ".join(contact_parts)
         if contact_str:
             check_page_break(16)
@@ -202,28 +218,21 @@ class LatexCompiler:
             add_section_header("Education")
             for edu in resume.education:
                 check_page_break(25)
-                inst = edu.institution
-                degree = edu.degree
-                if "chandigarh" in inst.lower() or not degree or "degree" in degree.lower() or "studies" in degree.lower():
-                    edu_line = "Chandigarh University, Mohali, Punjab — B.E. in Computer Science & Engineering | 2023 – 2027 | CGPA: 8.04"
-                    coursework = "Relevant Coursework: Data Structures & Algorithms, Operating Systems, DBMS, Computer Networks, OOP."
-                    page.insert_text(pymupdf.Point(MARGIN_X, y), edu_line, fontsize=8.8, fontname=font_name, color=(0.1, 0.1, 0.1))
-                    y += 11.5
-                    page.insert_text(pymupdf.Point(MARGIN_X, y), coursework, fontsize=8.2, fontname=font_name, color=(0.3, 0.3, 0.3))
+                inst = edu.institution or ""
+                degree = edu.degree or ""
+                dates = f"{edu.start_date or ''} – {edu.end_date or ''}".strip(" –")
+                gpa = f" | CGPA: {edu.gpa}" if edu.gpa else ""
+                deg_part = f" — {degree}" if degree else ""
+                edu_line = f"{inst}{deg_part}{gpa}"
+                page.insert_text(pymupdf.Point(MARGIN_X, y), edu_line, fontsize=8.8, fontname=font_name, color=(0.1, 0.1, 0.1))
+                if dates:
+                    dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.5)
+                    page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.5, fontname=font_name, color=(0.4, 0.4, 0.4))
+                y += 11.5
+                if edu.highlights:
+                    cw_line = f"Relevant Coursework: {', '.join(edu.highlights)}"
+                    page.insert_text(pymupdf.Point(MARGIN_X, y), cw_line, fontsize=8.2, fontname=font_name, color=(0.3, 0.3, 0.3))
                     y += 12.0
-                else:
-                    dates = f"{edu.start_date or ''} - {edu.end_date or ''}".strip(" -")
-                    gpa = f" | CGPA: {edu.gpa}" if edu.gpa else ""
-                    edu_line = f"{edu.institution} — {edu.degree}{gpa}"
-                    page.insert_text(pymupdf.Point(MARGIN_X, y), edu_line, fontsize=8.8, fontname=font_name, color=(0.1, 0.1, 0.1))
-                    if dates:
-                        dates_w = pymupdf.get_text_length(dates, fontname=font_name, fontsize=8.5)
-                        page.insert_text(pymupdf.Point(PAGE_W - MARGIN_X - dates_w, y), dates, fontsize=8.5, fontname=font_name, color=(0.4, 0.4, 0.4))
-                    y += 11.5
-                    if edu.highlights:
-                        cw_line = f"Relevant Coursework: {', '.join(edu.highlights)}"
-                        page.insert_text(pymupdf.Point(MARGIN_X, y), cw_line, fontsize=8.2, fontname=font_name, color=(0.3, 0.3, 0.3))
-                        y += 12.0
             y += 2
 
         # 4. Technical Skills
